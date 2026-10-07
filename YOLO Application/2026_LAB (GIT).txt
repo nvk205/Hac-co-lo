@@ -1,0 +1,474 @@
+================================================================================
+                    		GIT & GITHUB 
+================================================================================
+Tổng hợp lệnh Git thường dùng và quy trình làm việc trên GitHub.
+
+
+1. KHÁI NIỆM NỀN TẢNG
+********************************************************************************
+Working Directory (Nơi làm việc) --(git add)--> Staging Area (Nơi chờ commit) --(git commit)--> Git Repository (Nơi lưu trữ)
+
+Unstaged: Thay đổi chưa đưa vào Staging, khi commit không lưu lịch sử.
+Staged: Thay đổi đã đưa vào Staging, commit lưu lịch sử
+
+2. KHỞI TẠO & CLONE
+*********************************************************************************
+git init                       Khởi tạo repo mới tại thư mục hiện tại
+git clone <url>                Clone repo từ remote về máy
+git clone <url> <folder>       Clone vào thư mục chỉ định
+git clone --depth 1 <url>      Clone nông - chỉ lấy commit cuối, tải rất nhanh
+
+
+3. STAGING AREA
+*********************************************************************************
+Kiểm tra trạng thái
+git status                     Kiểm tra trạng thái file (staged/unstaged)
+git status -s                  Xem trạng thái dạng rút gọn
+
+Thêm vào staging
+git add <file>                 Add 1 file cụ thể
+git add .                      Add toàn bộ file thay đổi / file mới
+git add -p                     Chọn từng hunk (đoạn code) trong file để stage
+
+Di chuyển / xóa file
+git mv <old> <new>              Đổi tên / di chuyển file, Git tự track
+git rm <file>                   Xóa file khỏi ổ đĩa + stage hành động xóa
+git rm --cached <file>          Bỏ tracking nhưng GIỮ LẠI file thật
+
+Unstage
+git reset <file>                Đưa 1 file ra khỏi staging
+git reset                       Đưa toàn bộ file ra khỏi staging
+
+
+4. COMMIT
+*********************************************************************************
+git commit                      Mở editor để nhập message chi tiết
+git commit -m "msg"             Tạo commit nhanh kèm message
+git commit -am "msg"            Add toàn bộ file đã track + commit luôn
+git commit --amend              Sửa message commit gần nhất / bổ sung file quên add
+git commit --amend --no-edit    Bổ sung file vào commit cũ, giữ nguyên message
+
+
+5. BRANCH & STASH
+*********************************************************************************
+Branch
+git branch                            Liệt kê branch local
+git branch -a                         Liệt kê tất cả branch (local + remote)
+git branch --sort=-committerdate      Sắp xếp theo thời gian commit mới nhất
+git switch <name>  (hoặc checkout)    Chuyển sang branch chỉ định
+git switch -c <name> (hoặc checkout -b) Tạo branch mới và chuyển sang
+git branch -m <old> <new>             Đổi tên branch
+git branch -d <name>                  Xóa branch (an toàn, chỉ khi đã merge)
+git branch -D <name>                  Ép xóa branch, bất chấp chưa merge
+
+Stash (tạm cất công việc dở dang)
+git stash                       Tạm lưu thay đổi staged/unstaged
+git stash -u                    Tạm lưu cả file mới tạo (untracked)
+git stash list                  Xem danh sách các bản stash
+git stash apply                 Áp bản stash gần nhất (không xóa stash)
+git stash pop                   Áp bản stash gần nhất VÀ XÓA stash đó
+git stash drop                  Xóa 1 bản stash cụ thể
+
+
+6. DIFF & XEM LỊCH SỬ
+*********************************************************************************
+So sánh thay đổi
+git diff                        Thay đổi chưa staged (WorkDir vs Staging)
+git diff --staged               Thay đổi đã staged (Staging vs commit cũ)
+git diff HEAD                   Toàn bộ thay đổi (staged + unstaged)
+git diff --name-only            Chỉ liệt kê tên file thay đổi
+
+Soi chi tiết commit
+git show                        Thông tin & thay đổi của commit gần nhất
+git show <commit>               Chi tiết 1 commit cụ thể
+git show <commit>:<file>        Nội dung file tại thời điểm commit cũ
+git show <commit> --stat        Thống kê số dòng thêm/bớt
+git diff <commit1> <commit2>    So sánh 2 commit
+git diff <commit> <file>        File đã thay đổi thế nào kể từ commit đó
+
+  * Ghi chú: <commit> có thể là Hash ID, tên Branch, Tag, HEAD, hoặc HEAD~3
+    (lùi 3 commit).
+
+
+7. HỦY BỎ THAY ĐỔI
+*********************************************************************************
+git restore <file>                       Hủy thay đổi trong file, về commit gần nhất
+git restore --staged <file>              Đưa file từ staged về unstaged
+git restore --staged --worktree <file>   Hủy sạch thay đổi ở cả 2 nơi
+git reset --hard                         [!] Xóa sạch toàn bộ thay đổi chưa commit
+git clean -n                             Xem trước file rác (untracked) sẽ bị xóa
+git clean -fd                            Xóa thẳng mọi file/thư mục untracked
+
+
+8. CHỈNH SỬA LỊCH SỬ
+*********************************************************************************
+git reset HEAD^                 Undo commit gần nhất, giữ code ở unstaged
+git reset --soft HEAD^          Undo commit gần nhất, giữ code ở staging area
+git rebase -i HEAD~6            Gộp/sửa/xóa 6 commit gần nhất (interactive)
+git reflog <branch>             Xem nhật ký mọi hành động (cứu commit lỡ xóa)
+  -> git reset --hard <id>      Khôi phục về đúng vị trí trong reflog
+
+
+9. LOG NÂNG CAO
+*********************************************************************************
+git log                            Xem lịch sử commit
+git log --oneline                  Lịch sử ngắn gọn, mỗi commit 1 dòng
+git log --graph --oneline --all    Sơ đồ nhánh trực quan toàn repo
+git log <file>                     Các commit từng thay đổi file này
+git log --follow <file>            Lịch sử file kể cả khi từng đổi tên
+git log -G "keyword"               Tìm commit đã thêm/xóa đoạn text "keyword"
+git log --author="Name"            Lọc commit theo người viết
+git log --since="2 weeks ago"      Lọc commit trong 2 tuần qua
+git shortlog -sn                   Thống kê tổng commit theo từng thành viên
+git blame <file>                   Ai sửa dòng code nào, lúc nào
+
+
+10. MERGE / REBASE / CONFLICT
+*********************************************************************************
+Giả sử: nhánh main = A-B-C, nhánh feature = B-D-E
+
+REBASE (đẩy gốc nhánh)
+  git switch feature -> git rebase main
+  => Tái cấu trúc lịch sử: D-E được nối tiếp sau C, lịch sử tuyến tính.
+
+MERGE (gộp nhánh)
+  git switch main -> git merge feature
+  => Tạo 1 Merge-Commit mới để nối C và D-E lại với nhau.
+
+SQUASH MERGE (nén commit)
+  git switch main -> git merge --squash feature -> git commit
+  => Nén D-E thành 1 commit duy nhất rồi gắn vào main.
+
+CHERRY-PICK (bốc lẻ commit)
+  git cherry-pick <commit_id>
+  => Copy riêng 1 commit từ nhánh khác gắn vào nhánh hiện tại.
+
+Khi gặp xung đột (conflict):
+  - Xử lý xong rồi chạy:   git rebase --continue  (hoặc git merge --continue)
+  - Muốn hủy thao tác:     git rebase --abort     (hoặc git merge --abort)
+
+
+***************MERGE PULL REQUEST**************************
+
+Khi PR được chấp nhận -> merge PR -> tự động cập nhật thay đổi lên main
+(có lưu lịch sử).
+
+Các phương thức merge:
+
+  (a) MERGE COMMIT
+      Toàn vẹn từng commit từ PR + tạo 1 merge-commit đánh dấu đã gộp
+      -> lưu lịch sử chi tiết, mỗi commit độc lập đều rõ ràng.
+
+        Nhánh main:    A --- B -------------- M   (Merge commit)
+                              \              /
+        Nhánh feature:         C --- D --- E
+
+  (b) SQUASH AND MERGE
+      Gộp các commit thành 1 -> PR đại diện 1 thay đổi logic, phù hợp
+      PR nhỏ / sửa lỗi đơn giản.
+
+        Nhánh main:    A --- B --- C'   (nén C, D, E thành C')
+                              \
+        Nhánh feature:         C --- D --- E   (ẩn/xóa khỏi lịch sử main)
+
+  (c) REBASE AND MERGE
+      Đưa từng commit từ PR nối tiếp nhau, không tạo merge-commit
+      -> lịch sử tuyến tính (linear), gọn gàng, rõ ràng.
+
+Bật auto-merge khi thỏa điều kiện:
+  GitHub -> Settings -> General -> Allow auto merge
+  (Bị hủy nếu push new change vào head branch, hoặc đổi base branch)
+  Thiết lập: Pull request -> chọn PR -> chọn Method -> Confirm auto-merge
+
+Merge Queue (gộp nhiều PR vào nhánh protected, đảm bảo điều kiện):
+  Thêm PR vào hàng chờ:  Repo -> Pull Request -> Merge when ready (có thể bypass)
+  Gỡ PR khỏi hàng chờ:   Repo -> PR -> chọn PR -> Remove from queue
+  Xem Merge Queue:       main -> View all branches -> chọn list
+
+Merge bị lỗi/conflict, hoặc muốn test trước -> xử lý PR ở local:
+  - PR đang hoạt động: mở bằng giao diện code trên trang GitHub
+  - PR không hoạt động (inactive):
+      git fetch origin pull/ID/head:BRANCH_NAME
+      git switch BRANCH_NAME
+      (chỉnh sửa rồi push nhánh mới)
+
+      [pull-inactive-pull-request] $ git push origin BRANCH_NAME
+      > Counting objects: 32, done.
+      > Delta compression using up to 8 threads.
+      > Compressing objects: 100% (26/26), done.
+      > Writing objects: 100% (29/29), 74.94 KiB | 0 bytes/s, done.
+      > Total 29 (delta 8), reused 0 (delta 0)
+      > To https://github.com/USERNAME/REPOSITORY.git
+      >  * [new branch]      BRANCH_NAME -> BRANCH_NAME
+
+      => Tạo Pull Request mới với nhánh vừa push
+
+  - Dùng "--no-ff" khi merge -> luôn tạo 1 merge-commit mới, bảo toàn
+    lịch sử từ nhánh riêng.
+
+Đóng Pull Request không merge:
+  Pull requests -> chọn PR muốn đóng -> Close pull request
+
+Thực hiện merge:
+  Repo -> Pull request -> cuộn xuống -> chọn Method -> Confirm merge
+
+
+
+11. REMOTE - PUSH & PULL
+*********************************************************************************
+git remote -v                    Danh sách remote đang kết nối
+git remote add origin <url>      Khai báo remote mới tên "origin"
+git remote rename <old> <new>    Đổi tên remote
+git remote remove <name>         Xóa liên kết remote
+
+git fetch origin main            Tải code mới từ server (chưa gộp)
+git fetch --all --prune          Tải toàn bộ remote + dọn nhánh server đã xóa
+
+git pull origin main             Tải code + tự động merge vào nhánh hiện tại
+git pull --rebase                Tải code + rebase đè lên trên
+
+git push origin main             Đẩy nhánh main lên server
+git push -u origin <branch>      Đẩy nhánh mới lên + liên kết upstream
+git push --force-with-lease      Đẩy đè lịch sử (an toàn hơn --force)
+git push --tags                  Đẩy toàn bộ tag local lên server
+
+
+12. CONFIG & FILE CẤU HÌNH
+*********************************************************************************
+git config user.name "Tên"                       Đặt tên cho repo hiện tại
+git config user.email "mail@domain"               Đặt email cho repo hiện tại
+git config --global user.name "Tên"               Đặt tên mặc định cho toàn máy
+git config --global core.editor "code --wait"     Đổi editor mặc định sang VS Code
+git config --list                                 Xem danh sách cấu hình đang bật
+git config alias.st status                        Tạo phím tắt (git st = git status)
+
+File & thư mục cấu hình quan trọng
+.git/config          File cấu hình riêng của dự án này
+~/.gitconfig          File cấu hình chung trên máy tính (Global)
+.gitignore            Danh sách file/thư mục Git BỎ QUA không theo dõi
+.git/hooks/            Thư mục chứa script tự động chạy (pre-commit, pre-push...)
+
+Ví dụ file .gitignore:
+  *.log                Bỏ qua mọi file có đuôi .log
+  node_modules/        Bỏ qua thư mục node_modules
+  secrets.env          Bỏ qua file secrets.env
+  !important.log       Ngoại lệ: vẫn theo dõi file important.log
+
+
+13. DEBUG, TAG & MỞ RỘNG
+*********************************************************************************
+Debugging & khôi phục
+git revert <commit_hash>       Tạo 1 commit mới có nội dung ĐẢO NGƯỢC commit cũ
+git bisect start               Bắt đầu tìm commit gây bug bằng thuật toán chia đôi
+git bisect bad                 Đánh dấu commit hiện tại bị lỗi
+git bisect good <commit>       Đánh dấu 1 commit cũ trong quá khứ chạy tốt
+git bisect reset               Thoát khỏi chế độ tìm lỗi Bisect
+
+Tag & tính năng mở rộng
+git tag v1.0.0                             Tạo Tag đánh dấu phiên bản (Lightweight)
+git tag -a v1.0.0 -m "Release"             Tạo Tag có kèm ghi chú (Annotated)
+git tag                                    Xem danh sách các Tag hiện có
+git tag -d <tag_name>                      Xóa 1 Tag ở local
+git push origin --delete <tag>             Xóa Tag trên server
+git worktree add <path> <branch>           Mở nhánh khác ở thư mục riêng (song song)
+git submodule add <url> <path>             Nhúng 1 Git repo khác làm sub-folder
+git archive --format=zip HEAD -o code.zip  Xuất toàn bộ code hiện tại thành file ZIP
+
+
+14. GITHUB FLOW - QUY TRÌNH LÀM VIỆC
+*********************************************************************************
+  [1] Create branch -> [2] Make changes -> [3] Create Pull Request
+      -> [4] Review comments -> [5] Merge PR -> [6] Delete branch
+
+
+[1] TẠO BRANCH RIÊNG TỪ main/master
+*********************************************************************************
+- Đặt tên ngắn gọn, theo mục đích công việc: VD fix-login-bug
+- Trên GitHub:
+  main -> View all branches -> New branch -> điền tên branch
+        -> chọn Repo nguồn -> Create branch
+
+
+[2] THỰC HIỆN THAY ĐỔI
+*********************************************************************************
+Tạo file mới:
+  Repo -> folder -> Add file -> Commit changes -> commit message
+
+Sửa file:
+  Repo -> file -> Pencil icon -> chỉnh sửa -> Preview -> Commit changes
+  (Nếu là người khác / branch protected): Propose change -> Create pull request
+
+Đổi tên file (UI):
+  File editor -> đổi tên -> Commit changes -> commit msg -> Commit
+
+Đổi tên file (dùng lệnh, đã có repo + cloned):
+  git mv OLD NEW
+  git status
+  git commit -m "Rename file"
+  git push origin BRANCH
+
+Di chuyển file (UI):
+  File -> editor github.dev -> dùng "/" để vào subfolder, hoặc "../" / backspace
+  để lùi cấp thư mục -> Commit changes -> commit msg -> Commit
+
+Di chuyển file (dùng lệnh, đã có repo + cloned):
+  git status               (kiểm tra vị trí)
+  git rm file               (stage hành động xóa)
+  git add                    (stage vị trí mới)
+  git status
+  commit staged file rồi push lên GitHub
+
+Xóa file:
+  Delete file:      File -> ... -> Delete file -> Commit changes
+  Delete Directory: File -> ... -> Delete directory -> Commit
+
+  Mẹo: Nên tách commit theo logic riêng biệt (VD: đổi tên biến 1 commit,
+       thêm test 1 commit khác) để dễ điều chỉnh sau này.
+
+
+[3] TẠO PULL REQUEST
+*********************************************************************************
+Fork: dùng khi không có quyền write vào repo gốc -> tạo bản sao độc lập,
+      cho phép collab độc lập, kết nối với origin (khác setting + quyền).
+
+Ảnh hưởng khi xóa/đổi trạng thái repo gốc:
+  - Private repo bị xóa      -> Private fork cũng bị xóa
+  - Public repo bị xóa       -> Public fork tách thành repo độc lập (mainstream)
+  - Public -> Private        -> Fork vẫn giữ Public
+  - Private -> Public        -> Fork vẫn giữ Private, tách khỏi mạng chia sẻ
+
+Tạo PR từ Fork:
+  Origin repo -> Compare & pull request -> Compare across forks
+  -> chọn nhánh (dropdown) của upstream muốn merge vào
+  -> chọn head fork -> chọn nhánh (compare branch)
+  -> Nhập Title + Description -> chọn quyền truy cập (maintainer)
+  -> Tạo PR sẵn sàng cho review, hoặc chọn Draft pull request
+
+Liên kết PR với Issue:
+  Dùng từ khóa: close / closes / fix / fixed / resolve / resolves / resolved
+  VD: "fixes #123" -> Issue tự động ĐÓNG khi PR merge thành công.
+  Cách khác: Repo -> Pull request -> sidebar phải -> Develop -> chọn issue cần link
+
+Thay đổi file ngay trong Pull Request:
+  Github -> Pull Request -> Files changed -> chọn file -> ...
+  -> Edit file -> thực hiện thay đổi -> Commit change
+  -> Chọn "Commit directly back to your head branch"
+
+Status check (kiểm tra tự động): gồm build logs, test result, annotation.
+  - 2 loại: Checks (có output/chú thích/message) + Commit status (đơn giản)
+  - Skip / request check dựa vào path và branch filtering
+
+  on: push hoặc on: pull_request sẽ KHÔNG kích hoạt nếu commit message /
+  HEAD commit của PR chứa: [skip ci] / [ci skip] / [no ci] / [skip actions]
+
+  Skip check cho 1 commit:
+    git commit -m "Update MSG"
+    >
+    > skip-checks: true
+
+  Request check cho 1 commit:
+    git commit -m "Refactor"
+    >
+    > request-checks: true
+
+  Trạng thái check:
+    completed        -> đã chạy xong, có kết luận
+    expected           -> chờ check-run phản hồi
+    failure              -> thất bại
+    in_progress            -> đang chạy
+    pending                  -> đang chờ
+    queued                    -> đang xếp hàng
+    requested                   -> đã tạo, chưa xếp hàng
+    waiting                       -> chờ deploy protection
+    startup_failure                 -> khởi tạo thất bại, không ảnh hưởng lần sau
+
+  Khi completed sẽ có conclusion:
+    action_required / failure / neutral / skipped / stale (quá lâu)
+    / time_out / success
+
+
+[4] ADDRESS REVIEW COMMENT
+*********************************************************************************
+Reviewer để lại câu hỏi, comment, gợi ý -> Pull Request vẫn được tự động
+cập nhật khi bạn thêm commit mới.
+
+
+[5] DELETING THE BRANCH
+*********************************************************************************
+Xóa và vẫn lưu lịch sử commit:
+  Repo -> Pull request -> Delete/Restore branch
+
+
+15. GIẢI QUYẾT CONFLICT TRÊN GITHUB / LOCAL
+
+Trên giao diện GitHub
+  1. Click Pull Request
+  2. Trong menu, click PR có merge conflict muốn giải quyết
+  3. Gần cuối trang, chọn "Resolve conflicts"
+  4. Chọn giữ lại nhánh của mình / của người khác / hoặc cả hai
+     -> xóa bỏ ký hiệu đánh dấu xung đột (<<<<<<<, =======, >>>>>>>)
+  5. Nếu file có nhiều hơn 1 điểm conflict -> lặp lại bước 4
+  6. Hoàn thành xong, ấn "Mark as resolved"
+  7. Commit merge
+  8. Click "Create branch and update my pull request"
+     hoặc "I understand, continue updating BRANCH"
+  9. Merge pull request
+
+Trên local (Git Bash) - competing line change conflict
+  1. Mở Git Bash
+  2. Quan sát local Git repo có lỗi conflict -> cd REPOSITORY-NAME
+  3. Liệt kê file bị ảnh hưởng, VD file styleguide.md bị lỗi:
+
+     $ git status
+     > # On branch branch-b
+     > # You have unmerged paths.
+     > #   (fix conflicts and run "git commit")
+     > #
+     > # Unmerged paths:
+     > #   (use "git add <file>..." to mark resolution)
+     > #
+     > #   both modified:      styleguide.md
+     > no changes added to commit (use "git add" and/or "git commit -a")
+
+  4. Mở text editor (VD VS Code) -> quan sát file bị lỗi
+  5. Tìm marker conflict:
+       <<<<<<<  -> đánh dấu bắt đầu
+       =======  -> ranh giới phân chia
+       >>>>>>>  -> đánh dấu kết thúc
+
+     Ví dụ:
+
+       If you have questions, please
+       <<<<<<< HEAD              // Nội dung từ nhánh hiện tại
+       open an issue
+       =======                    // ranh giới phân chia
+       ask your question in IRC.
+       >>>>>>> branch-a           // nội dung từ nhánh muốn gộp
+
+  6. Chọn giữ lại thay đổi của nhánh mình, nhánh kia, hoặc kết hợp cả hai.
+     Xóa toàn bộ các ký hiệu đánh dấu (<<<<<<<, =======, >>>>>>>):
+
+       If you have questions, please open an issue or ask in our IRC
+       channel if it's more urgent.
+
+  7. Stage thay đổi:
+       git add .
+
+  8. Commit thay đổi kèm chú thích:
+       git commit -m "Resolve merge conflict by incorporating both suggestions"
+
+  9. Merge thay đổi (theo hướng dẫn ở Mục 14, phần [5])
+
+
+(optional) PUSH THAY ĐỔI LÊN REMOTE REPO (local -> remote)
+
+  git push REMOTE BRANCH                    VD: git push origin main
+
+  Đổi tên branch khi push:
+    git push REMOTE-NAME LOCAL-BRANCH-NAME:REMOTE-BRANCH-NAME
+    => Push LOCAL-BRANCH-NAME lên REMOTE-NAME, nhưng đổi tên thành
+       REMOTE-BRANCH-NAME trên server.
+
+================================================================================
+     Tổng hợp từ GIT_Cheatsheet gốc - trình bày lại dạng văn bản thuần (.txt)
+================================================================================
