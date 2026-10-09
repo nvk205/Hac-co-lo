@@ -29,11 +29,11 @@ PHẦN 1: QUY TẮC LÀM VIỆC
 
 PHẦN 2: CÁCH ĐÓNG GÓP BÀI TẬP LỚN
 
-    1. Điểm Chăm chỉ - Số lần Commit: Máy sẽ đếm số lần bạn "Lưu báo cáo/code". Mỗi người cần ít nhất 5-10 commits trong suốt dự án. (Lưu ý: Cố tình thêm 1 dấu phẩy rồi commit để gian lận số lượng sẽ bị trừ điểm).
+1. Điểm Chăm chỉ - Số lần Commit: Máy sẽ đếm số lần bạn "Lưu báo cáo/code". Mỗi người cần ít nhất 5-10 commits trong suốt dự án. (Lưu ý: Cố tình thêm 1 dấu phẩy rồi commit để gian lận số lượng sẽ bị trừ điểm).
 
-    2. Điểm Sản phẩm - Nộp PR : Bạn phải là tác giả của ít nhất 1-2 "Đơn xin nộp bài" được gộp thành công vào thư mục chung. Nghĩa là bạn thực sự tạo ra giá trị (code thuật toán, tạo file test .txt, viết báo cáo file word/latex).
+2. Điểm Sản phẩm - Nộp PR : Bạn phải là tác giả của ít nhất 1-2 "Đơn xin nộp bài" được gộp thành công vào thư mục chung. Nghĩa là bạn thực sự tạo ra giá trị (code thuật toán, tạo file test .txt, viết báo cáo file word/latex).
 
-    3. Đi Review dạo: Ai cũng phải vào đọc bài của người khác. Đọc, góp ý và bấm "Approve" (Duyệt) cho bài của thành viên khác ít nhất 2 lần.
+3. Đi Review dạo: Ai cũng phải vào đọc bài của người khác. Đọc, góp ý và bấm "Approve" (Duyệt) cho bài của thành viên khác ít nhất 2 lần.
 
-    4. Lưu ý cho các bạn không code thuật toán : Đừng lo nếu bạn không giỏi C/C++. Những bạn nhận nhiệm vụ viết Báo cáo, vẽ sơ đồ, hoặc tạo file Test input/output... chỉ cần soạn thảo file đó, đẩy lên GitHub (Commit và PR) y hệt như người viết code.
+4. Lưu ý cho các bạn không code thuật toán : Đừng lo nếu bạn không giỏi C/C++. Những bạn nhận nhiệm vụ viết Báo cáo, vẽ sơ đồ, hoặc tạo file Test input/output... chỉ cần soạn thảo file đó, đẩy lên GitHub (Commit và PR) y hệt như người viết code.
 
