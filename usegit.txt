@@ -1,0 +1,44 @@
+Git & GitHub
+
+- source control là chương trình quản lý source code (git)
+- Repo: dự án chứa toàn bộ source
+- Commit: thay đổi source
+- Branch: Nhánh
+
+git remote set-url origin <URL_của_repo_mới> : Thay doi url cua repo
+
+git remote add origin <URL_của_repo_mới>: Them ket noi repo moi
+
+$ git remote add <name> <link>
+
+git remote -v //check
+
+$ git init
+
+$ git clone https://github.com/user/repository.git
+
+$ git branch  //dùng để kiểm tra branch hiện tại
+
+$ git branch <name_branch>  //Để tạo mới một branch
+
+$ git checkout -b <name_branch>  //Để chuyển và tạo mới
+
+$ git checkout <name_branch>
+
+$ git add .
+
+$ git commit -m "Message"
+
+$ git push origin <name_branch>
+
+$ git remote add origin <remote_url>
+
+$ git push origin <name_branch>
+
+$ git checkout master
+
+$ git merge <new_branch>
+
+$ git log
+
+$ git pull origin master
