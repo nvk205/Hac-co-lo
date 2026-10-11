@@ -1,4 +1,4 @@
-#include "dragon.h"
+﻿#include "dragon.h"
 #include <stdio.h>
 #include <stdint.h>
 
@@ -92,3 +92,72 @@ unsigned int sbox1[256]={0x393BCE6B,0x232BA00D,0x84E18ADA,0x84557BA7,0x56828948,
 			0x44FFD49F,0xD428C4F6,0x2C2002FC,0xF2797BAF,0xA3B20A4E,0xB9BF1A89,
 			0xE4ABA5E2,0xC912C58D,0x96516F9A,0x51561E77};
 
+
+
+u_int G_box(u_int x, int n) {
+	
+	u_int x_0, x_1, x_2, x_3;
+	x_0 = x>>24;
+	x_1 = (x<<8)>>24;
+	x_2 = (x<<16)>>24;
+	x_3 = (x<<24)>>24;
+	switch (n) {
+		case 1:
+			return sbox1[x_0] ^ sbox1[x_1] ^ sbox1[x_2] ^ sbox2[x_3];
+		case 2:
+			return sbox1[x_0] ^ sbox1[x_1] ^ sbox2[x_2] ^ sbox1[x_3];
+		case 3:
+			return sbox1[x_0] ^ sbox2[x_1] ^ sbox1[x_2] ^ sbox1[x_3];
+		default:
+			fprintf(stderr, "Error in G_box: incorrect value n");
+			break;
+	}
+	return 0;
+}
+
+
+u_int H_box(u_int x, int n) {
+	
+	u_int x_0, x_1, x_2, x_3;
+	x_0 = x>>24;
+	x_1 = (x<<8)>>24;
+	x_2 = (x<<16)>>24;
+	x_3 = (x<<24)>>24;
+	switch (n) {
+		case 1:
+			return sbox2[x_0] ^ sbox2[x_1] ^ sbox2[x_2] ^ sbox1[x_3];
+		case 2:
+			return sbox2[x_0] ^ sbox2[x_1] ^ sbox1[x_2] ^ sbox2[x_3];
+		case 3:
+			return sbox2[x_0] ^ sbox1[x_1] ^ sbox2[x_2] ^ sbox2[x_3];
+		default:
+			fprintf(stderr, "Error in H_box: incorrect value n");
+			break;
+	}
+	return 0;
+}
+
+
+int F_func(u_int *A) {
+
+	int i, a;
+	for (i = 1; i < 6; i+=2) 
+		A[i] ^= A[i-1];	
+	
+	for (i = 2; i < 7; i+=2) 
+		A[i%6] += A[i-1];	
+		
+	for (i = 3, a = 1; i < 8; i+=2, a++)
+		A[i%6] ^= G_box(A[(i-3)%6], a);
+	
+	for (i = 0, a = 1; i < 5; i+=2, a++)
+		A[i] ^= H_box(A[i+1], a); 
+	
+	for (i = 3; i < 8; i+=2)
+		A[i%6] += A[(i-3)%6];
+
+	for (i = 2; i < 7; i+=2) 
+		A[i%6] ^= A[i-1];
+	
+	return 0;	
+}
