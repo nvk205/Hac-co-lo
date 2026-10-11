@@ -21,3 +21,4 @@ Thumbs.db
 output/
 *.log
 output/
+/.vs
