@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-int main(){
+int main(void){
 
-    return 0;
+    int fails = dragon_selftest(1);
+    return fails != 0;
 }

@@ -1,4 +1,5 @@
 ﻿#include "dragon.h"
+#include <string.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -160,4 +161,74 @@ int F_func(u_int *A) {
 		A[i%6] ^= A[i-1];
 	
 	return 0;	
+}
+/* Hàm dragon_selftest - tự kiểm tra S-box, G/H va F */
+static int check(int ok, const char *name, int verbose)
+{
+    if (verbose || !ok)
+        printf("[%s] %s\n", ok ? "PASS" : "FAIL", name);
+    return ok ? 0 : 1;
+}
+
+int dragon_selftest(int verbose)
+{
+    static const struct { u_int x, g[3], h[3]; } GH[3] = {
+        { 0x00000000u, { 0x90700DEFu, 0x90700DEFu, 0x90700DEFu }, { 0x90700DEFu, 0x90700DEFu, 0x90700DEFu } },
+        { 0x01020304u, { 0xADBC78C8u, 0xF19650DFu, 0x5A78BE36u }, { 0x0A708A72u, 0x565AA265u, 0xFDB44C8Cu } },
+        { 0xFFFFFFFFu, { 0x50C4AB22u, 0x50C4AB22u, 0x50C4AB22u }, { 0x50C4AB22u, 0x50C4AB22u, 0x50C4AB22u } },
+    };
+    static const u_int F_IN[3][6] = {
+        { 0x00000000u, 0x00000000u, 0x00000000u, 0x00000000u, 0x00000000u, 0x00000000u },
+        { 0x00000001u, 0x00000002u, 0x00000003u, 0x00000004u, 0x00000005u, 0x00000006u },
+        { 0x01234567u, 0x89ABCDEFu, 0xFEDCBA98u, 0x76543210u, 0xDEADBEEFu, 0xCAFEBABEu },
+    };
+    static const u_int F_OUT[3][6] = {
+        { 0xEF897CDCu, 0x95F9D3F2u, 0x31FE3D1Au, 0x6C6E8DFAu, 0x69E74BF9u, 0x3477FCD7u },
+        { 0x2605B6CFu, 0xCBA11636u, 0xB98782DBu, 0x33462226u, 0xB3A77837u, 0x5A288C9Du },
+        { 0xFCD4B9F5u, 0x12881E70u, 0x2C5D15A6u, 0xAF0C63D6u, 0x9151E496u, 0x19937DE7u },
+    };
+    int fails = 0, i, n, bit, ones1, ones2, bad;
+    int ok;
+    char name[64];
+    u_int A[6];
+
+    /* 1. S-box: đầu/cuối bảng */
+    ok = sbox1[0] == 0x393BCE6Bu && sbox1[255] == 0x0192B555u &&
+         sbox2[0] == 0xA94BC384u && sbox2[255] == 0x51561E77u;
+    fails += check(ok, "S-box: gia tri dau/cuoi cua S1 va S2", verbose);
+
+    /* 2. S-box: mọi bit đầu ra phải có đúng 128 số 1 trong 256 phần tử */
+    bad = 0;
+    for (bit = 0; bit < 32; bit++) {
+        ones1 = ones2 = 0;
+        for (i = 0; i < 256; i++) {
+            ones1 += (sbox1[i] >> bit) & 1u;
+            ones2 += (sbox2[i] >> bit) & 1u;
+        }
+        if (ones1 != 128 || ones2 != 128)
+            bad++;
+    }
+    fails += check(bad == 0, "S-box: ca 32 bit dau ra deu can bang (128 so 1)", verbose);
+
+    /* 3. G1..G3, H1..H3 */
+    for (i = 0; i < 3; i++) {
+        ok = 1;
+        for (n = 1; n <= 3; n++) {
+            ok &= G_box(GH[i].x, n) == GH[i].g[n - 1];
+            ok &= H_box(GH[i].x, n) == GH[i].h[n - 1];
+        }
+        snprintf(name, sizeof name, "G1..G3, H1..H3 tai x = %08X", GH[i].x);
+        fails += check(ok, name, verbose);
+    }
+
+    /* 4. Hàm F: (a,b,c,d,e,f) -> (a',b',c',d',e',f') */
+    for (i = 0; i < 3; i++) {
+        memcpy(A, F_IN[i], sizeof A);
+        F_func(A);
+        snprintf(name, sizeof name, "F_func, test %d", i + 1);
+        fails += check(memcmp(A, F_OUT[i], sizeof A) == 0, name, verbose);
+    }
+
+    printf("dragon_selftest: %s (%d loi)\n", fails ? "CO LOI" : "TAT CA DAT", fails);
+    return fails;
 }

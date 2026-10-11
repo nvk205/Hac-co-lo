@@ -20,4 +20,6 @@ u_int H_box(u_int x, int n);
 int init_key(u64 *key, u64 *iv, element *W, int n);
 int gen_key(u_int *B, u64 *z);
 
+int dragon_selftest(int verbose);
+
 #endif
