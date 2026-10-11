@@ -1,0 +1,23 @@
+#ifndef DRAGON_H
+#define DRAGON_H
+
+#include <stdint.h>
+
+typedef uint64_t u64;
+typedef unsigned int u_int;
+
+typedef struct {
+    u64 lb;
+    u64 rb;
+} element;
+
+extern unsigned int sbox1[256];
+extern unsigned int sbox2[256];
+
+int F_func(u_int *A);
+u_int G_box(u_int x, int n);
+u_int H_box(u_int x, int n);
+int init_key(u64 *key, u64 *iv, element *W, int n);
+int gen_key(u_int *B, u64 *z);
+
+#endif
