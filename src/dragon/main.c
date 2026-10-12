@@ -20,7 +20,7 @@ int main(void)
 
     init_key(key, iv, W, 1);
 
-    /* Chuy?n W[8] thành 32 t? 32 bit trong B[32]. */
+    /* Chuy?n W[8] thï¿½nh 32 t? 32 bit trong B[32]. */
     for (j = 0, k = 0; k < 8; k++, j += 4) {
         B[j] = (u_int)(W[k].lb >> 32);
         B[j + 1] = (u_int)W[k].lb;
@@ -28,7 +28,7 @@ int main(void)
         B[j + 3] = (u_int)W[k].rb;
     }
 
-    /* Sinh và in 16 giá tr? ??u ra 64 bit. */
+    /* Sinh vï¿½ in 16 giï¿½ tr? ??u ra 64 bit. */
     for (int x = 0; x < 16; x++) {
         gen_key(B, &z);
         printf("%016" PRIx64 "\n", z);

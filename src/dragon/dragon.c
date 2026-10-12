@@ -1,4 +1,4 @@
-﻿#include "dragon.h"
+#include "dragon.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -232,6 +232,73 @@ int dragon_selftest(int verbose)
     printf("dragon_selftest: %s (%d loi)\n", fails ? "CO LOI" : "TAT CA DAT", fails);
     return fails;
 }
+
+int init_key(u64 *key, u64 *iv, element *W,  int n) {
+	
+	if (n == 1) {
+		W[0].lb = key[0];
+	      	W[0].rb = key[1];
+		W[1].lb = key[1] ^ iv[1];
+		W[1].rb = key[0] ^ iv[0];
+		W[2].lb = iv[0];
+		W[2].rb = iv[1];
+		W[3].lb = key[0] ^ iv[1];
+		W[3].rb = key[1] ^ iv[0];
+		W[4].lb = key[1];
+		W[4].rb = key[0];
+		W[5].lb = key[0] ^ iv[0];
+		W[5].rb = key[1] ^ iv[1];
+		W[6].lb = iv[1];
+		W[6].rb = iv[0];
+		W[7].lb = key[1] ^ iv[0];
+		W[7].rb	= key[0] ^ iv[1];
+	}
+	else {
+		W[0].lb = key[0];
+	      	W[0].rb = key[1];
+		W[1].lb = key[2];
+		W[1].rb = key[3];
+		W[2].lb = key[0] ^ iv[0];
+		W[2].rb = key[1] ^ iv[1];
+		W[3].lb = key[2] ^ iv[2];
+		W[3].rb = key[3] ^ iv[3];
+		W[4].lb = ~(key[0] ^ iv[0]);
+		W[4].rb = ~(key[1] ^ iv[1]);
+		W[5].lb = ~(key[2] ^ iv[2]);
+		W[5].rb = ~(key[3] ^ iv[3]);	
+		W[6].lb = iv[0];
+		W[6].rb = iv[1];
+		W[7].lb = iv[2];
+		W[7].rb	= iv[3];
+	}
+	
+	u_int A[6];
+	element t = {0, 0};
+
+	for (int i = 0; i < 16; i++) {
+		A[0] = ((W[0].lb ^ W[6].lb ^ W[7].lb)>>32);
+		A[1] = (W[0].lb ^ W[6].lb ^ W[7].lb);
+		A[2] = ((W[0].rb ^ W[6].rb ^ W[7].rb)>>32);
+		A[3] = (W[0].rb ^ W[6].rb ^ W[7].rb);
+		A[4] = M[0];
+		A[5] = M[1];
+		
+		F_func(A);
+		
+		t.lb = (((u64)A[0])<<32) ^ ((u64)A[1]) ^ W[4].lb;
+		t.rb = (((u64)A[2])<<32) ^ ((u64)A[3]) ^ W[4].rb;
+
+		for (int j = 7; j > 0; j--)
+			W[j] = W[j-1];
+		
+		W[0] = t;
+	
+		M[0] = A[4];
+		M[1] = A[5];
+	}
+	return 0;
+}
+
     int gen_key(u_int *B, u64 *z) {
 	u_int A[6];
 	A[0] = B[0];
