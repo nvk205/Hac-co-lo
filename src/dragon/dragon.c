@@ -162,7 +162,7 @@ int F_func(u_int *A) {
 	
 	return 0;	
 }
-/* Hàm dragon_selftest - tự kiểm tra S-box, G/H va F */
+/* Ham dragon_selftest - tu kiem tra S-box, G/H va F */
 static int check(int ok, const char *name, int verbose)
 {
     if (verbose || !ok)
@@ -192,12 +192,12 @@ int dragon_selftest(int verbose)
     char name[64];
     u_int A[6];
 
-    /* 1. S-box: đầu/cuối bảng */
+    /* 1. S-box: dau/cuoi bang */
     ok = sbox1[0] == 0x393BCE6Bu && sbox1[255] == 0x0192B555u &&
          sbox2[0] == 0xA94BC384u && sbox2[255] == 0x51561E77u;
     fails += check(ok, "S-box: gia tri dau/cuoi cua S1 va S2", verbose);
 
-    /* 2. S-box: mọi bit đầu ra phải có đúng 128 số 1 trong 256 phần tử */
+    /* 2. S-box: moi bit dau ra phai co dung 128 so 1 trong 256 phan tu */
     bad = 0;
     for (bit = 0; bit < 32; bit++) {
         ones1 = ones2 = 0;
@@ -221,7 +221,7 @@ int dragon_selftest(int verbose)
         fails += check(ok, name, verbose);
     }
 
-    /* 4. Hàm F: (a,b,c,d,e,f) -> (a',b',c',d',e',f') */
+    /* 4. Ham F: (a,b,c,d,e,f) -> (a',b',c',d',e',f') */
     for (i = 0; i < 3; i++) {
         memcpy(A, F_IN[i], sizeof A);
         F_func(A);
