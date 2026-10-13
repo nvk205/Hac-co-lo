@@ -1,8 +1,11 @@
 #include "dragon.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
 
-////////Bat dau phan S-Box////////
+static u64 M[2] = {0x00004472, 0x61676F6E};
 
-const uint32_t S1[256] = {0x393BCE6B,0x232BA00D,0x84E18ADA,0x84557BA7,0x56828948,0x166908F3,
+unsigned int sbox1[256]={0x393BCE6B,0x232BA00D,0x84E18ADA,0x84557BA7,0x56828948,0x166908F3,
 			0x414A3437,0x7BB44897,0x2315BE89,0x7A01F224,0x7056AA5D,0x121A3917,
 			0xE3F47FA2,0x1F99D0AD,0x9BAD518B,0x99B9E75F,0x8829A7ED,0x2C511CA9,
 			0x1D89BF75,0xF2F8CDD0,0x2DA2C498,0x48314C42,0x922D9AF6,0xAA6CE00C,
@@ -46,7 +49,7 @@ const uint32_t S1[256] = {0x393BCE6B,0x232BA00D,0x84E18ADA,0x84557BA7,0x56828948
 			0xF115D008,0x4553AA9F,0x3194BE09,0xB4A9367D,0x0A9DFEEC,0x7CA002D6,
 			0x8E53A875,0x965E8183,0x14D79DAC,0x0192B555};
 
-const uint32_t S2[256] = {0xA94BC384,0xF7A81CAE,0xAB84ECD4,0x00DEF340,0x8E2329B8,0x23AF3A22,
+unsigned int sbox2[256]={0xA94BC384,0xF7A81CAE,0xAB84ECD4,0x00DEF340,0x8E2329B8,0x23AF3A22,
 			0x23C241FA,0xAED8729E,0x2E59357F,0xC3ED78AB,0x687724BB,0x7663886F,
 			0x1669AA35,0x5966EAC1,0xD574C543,0xDBC3F2FF,0x4DD44303,0xCD4F8D01,
 			0x0CBF1D6F,0xA8169D59,0x87841E00,0x3C515AD4,0x708784D6,0x13EB675F,
@@ -90,62 +93,266 @@ const uint32_t S2[256] = {0xA94BC384,0xF7A81CAE,0xAB84ECD4,0x00DEF340,0x8E2329B8
 			0x44FFD49F,0xD428C4F6,0x2C2002FC,0xF2797BAF,0xA3B20A4E,0xB9BF1A89,
 			0xE4ABA5E2,0xC912C58D,0x96516F9A,0x51561E77};
 
-static void split_bytes(
-    uint32_t x,
-    uint8_t bytes[4]
-) {
-    bytes[0] = (uint8_t)(x >> 24);
-    bytes[1] = (uint8_t)(x >> 16);
-    bytes[2] = (uint8_t)(x >> 8);
-    bytes[3] = (uint8_t)x;
+
+
+u_int G_box(u_int x, int n) {
+	
+	u_int x_0, x_1, x_2, x_3;
+	x_0 = x>>24;
+	x_1 = (x<<8)>>24;
+	x_2 = (x<<16)>>24;
+	x_3 = (x<<24)>>24;
+	switch (n) {
+		case 1:
+			return sbox1[x_0] ^ sbox1[x_1] ^ sbox1[x_2] ^ sbox2[x_3];
+		case 2:
+			return sbox1[x_0] ^ sbox1[x_1] ^ sbox2[x_2] ^ sbox1[x_3];
+		case 3:
+			return sbox1[x_0] ^ sbox2[x_1] ^ sbox1[x_2] ^ sbox1[x_3];
+		default:
+			fprintf(stderr, "Error in G_box: incorrect value n");
+			break;
+	}
+	return 0;
 }
 
-uint32_t G1(uint32_t x)
+
+u_int H_box(u_int x, int n) {
+	
+	u_int x_0, x_1, x_2, x_3;
+	x_0 = x>>24;
+	x_1 = (x<<8)>>24;
+	x_2 = (x<<16)>>24;
+	x_3 = (x<<24)>>24;
+	switch (n) {
+		case 1:
+			return sbox2[x_0] ^ sbox2[x_1] ^ sbox2[x_2] ^ sbox1[x_3];
+		case 2:
+			return sbox2[x_0] ^ sbox2[x_1] ^ sbox1[x_2] ^ sbox2[x_3];
+		case 3:
+			return sbox2[x_0] ^ sbox1[x_1] ^ sbox2[x_2] ^ sbox2[x_3];
+		default:
+			fprintf(stderr, "Error in H_box: incorrect value n");
+			break;
+	}
+	return 0;
+}
+
+
+int F_func(u_int *A) {
+
+	int i, a;
+	for (i = 1; i < 6; i+=2) 
+		A[i] ^= A[i-1];	
+	
+	for (i = 2; i < 7; i+=2) 
+		A[i%6] += A[i-1];	
+		
+	for (i = 3, a = 1; i < 8; i+=2, a++)
+		A[i%6] ^= G_box(A[(i-3)%6], a);
+	
+	for (i = 0, a = 1; i < 5; i+=2, a++)
+		A[i] ^= H_box(A[i+1], a); 
+	
+	for (i = 3; i < 8; i+=2)
+		A[i%6] += A[(i-3)%6];
+
+	for (i = 2; i < 7; i+=2) 
+		A[i%6] ^= A[i-1];
+	
+	return 0;	
+}
+/* Ham dragon_selftest - tu kiem tra S-box, G/H va F */
+static int check(int ok, const char *name, int verbose)
 {
-    uint8_t b[4];
-    split_bytes(x, b);
-
-    return S1[b[0]] ^ S1[b[1]] ^ S1[b[2]] ^ S2[b[3]];
+    if (verbose || !ok)
+        printf("[%s] %s\n", ok ? "PASS" : "FAIL", name);
+    return ok ? 0 : 1;
 }
 
-uint32_t G2(uint32_t x)
+int dragon_selftest(int verbose)
 {
-    uint8_t b[4];
-    split_bytes(x, b);
+    static const struct { u_int x, g[3], h[3]; } GH[3] = {
+        { 0x00000000u, { 0x90700DEFu, 0x90700DEFu, 0x90700DEFu }, { 0x90700DEFu, 0x90700DEFu, 0x90700DEFu } },
+        { 0x01020304u, { 0xADBC78C8u, 0xF19650DFu, 0x5A78BE36u }, { 0x0A708A72u, 0x565AA265u, 0xFDB44C8Cu } },
+        { 0xFFFFFFFFu, { 0x50C4AB22u, 0x50C4AB22u, 0x50C4AB22u }, { 0x50C4AB22u, 0x50C4AB22u, 0x50C4AB22u } },
+    };
+    static const u_int F_IN[3][6] = {
+        { 0x00000000u, 0x00000000u, 0x00000000u, 0x00000000u, 0x00000000u, 0x00000000u },
+        { 0x00000001u, 0x00000002u, 0x00000003u, 0x00000004u, 0x00000005u, 0x00000006u },
+        { 0x01234567u, 0x89ABCDEFu, 0xFEDCBA98u, 0x76543210u, 0xDEADBEEFu, 0xCAFEBABEu },
+    };
+    static const u_int F_OUT[3][6] = {
+        { 0xEF897CDCu, 0x95F9D3F2u, 0x31FE3D1Au, 0x6C6E8DFAu, 0x69E74BF9u, 0x3477FCD7u },
+        { 0x2605B6CFu, 0xCBA11636u, 0xB98782DBu, 0x33462226u, 0xB3A77837u, 0x5A288C9Du },
+        { 0xFCD4B9F5u, 0x12881E70u, 0x2C5D15A6u, 0xAF0C63D6u, 0x9151E496u, 0x19937DE7u },
+    };
+    int fails = 0, i, n, bit, ones1, ones2, bad;
+    int ok;
+    char name[64];
+    u_int A[6];
 
-    return S1[b[0]] ^ S1[b[1]] ^ S2[b[2]] ^ S1[b[3]];
+    /* 1. S-box: dau/cuoi bang */
+    ok = sbox1[0] == 0x393BCE6Bu && sbox1[255] == 0x0192B555u &&
+         sbox2[0] == 0xA94BC384u && sbox2[255] == 0x51561E77u;
+    fails += check(ok, "S-box: gia tri dau/cuoi cua S1 va S2", verbose);
+
+    /* 2. S-box: moi bit dau ra phai co dung 128 so 1 trong 256 phan tu */
+    bad = 0;
+    for (bit = 0; bit < 32; bit++) {
+        ones1 = ones2 = 0;
+        for (i = 0; i < 256; i++) {
+            ones1 += (sbox1[i] >> bit) & 1u;
+            ones2 += (sbox2[i] >> bit) & 1u;
+        }
+        if (ones1 != 128 || ones2 != 128)
+            bad++;
+    }
+    fails += check(bad == 0, "S-box: ca 32 bit dau ra deu can bang (128 so 1)", verbose);
+
+    /* 3. G1..G3, H1..H3 */
+    for (i = 0; i < 3; i++) {
+        ok = 1;
+        for (n = 1; n <= 3; n++) {
+            ok &= G_box(GH[i].x, n) == GH[i].g[n - 1];
+            ok &= H_box(GH[i].x, n) == GH[i].h[n - 1];
+        }
+        snprintf(name, sizeof name, "G1..G3, H1..H3 tai x = %08X", GH[i].x);
+        fails += check(ok, name, verbose);
+    }
+
+    /* 4. Ham F: (a,b,c,d,e,f) -> (a',b',c',d',e',f') */
+    for (i = 0; i < 3; i++) {
+        memcpy(A, F_IN[i], sizeof A);
+        F_func(A);
+        snprintf(name, sizeof name, "F_func, test %d", i + 1);
+        fails += check(memcmp(A, F_OUT[i], sizeof A) == 0, name, verbose);
+    }
+
+    printf("dragon_selftest: %s (%d loi)\n", fails ? "CO LOI" : "TAT CA DAT", fails);
+    return fails;
 }
 
-uint32_t G3(uint32_t x)
+int init_key(u64 *key, u64 *iv, element *W,  int n) {
+	
+	if (n == 1) {
+		W[0].lb = key[0];
+	      	W[0].rb = key[1];
+		W[1].lb = key[1] ^ iv[1];
+		W[1].rb = key[0] ^ iv[0];
+		W[2].lb = iv[0];
+		W[2].rb = iv[1];
+		W[3].lb = key[0] ^ iv[1];
+		W[3].rb = key[1] ^ iv[0];
+		W[4].lb = key[1];
+		W[4].rb = key[0];
+		W[5].lb = key[0] ^ iv[0];
+		W[5].rb = key[1] ^ iv[1];
+		W[6].lb = iv[1];
+		W[6].rb = iv[0];
+		W[7].lb = key[1] ^ iv[0];
+		W[7].rb	= key[0] ^ iv[1];
+	}
+	else {
+		W[0].lb = key[0];
+	      	W[0].rb = key[1];
+		W[1].lb = key[2];
+		W[1].rb = key[3];
+		W[2].lb = key[0] ^ iv[0];
+		W[2].rb = key[1] ^ iv[1];
+		W[3].lb = key[2] ^ iv[2];
+		W[3].rb = key[3] ^ iv[3];
+		W[4].lb = ~(key[0] ^ iv[0]);
+		W[4].rb = ~(key[1] ^ iv[1]);
+		W[5].lb = ~(key[2] ^ iv[2]);
+		W[5].rb = ~(key[3] ^ iv[3]);	
+		W[6].lb = iv[0];
+		W[6].rb = iv[1];
+		W[7].lb = iv[2];
+		W[7].rb	= iv[3];
+	}
+	
+	u_int A[6];
+	element t = {0, 0};
+
+	for (int i = 0; i < 16; i++) {
+		A[0] = ((W[0].lb ^ W[6].lb ^ W[7].lb)>>32);
+		A[1] = (W[0].lb ^ W[6].lb ^ W[7].lb);
+		A[2] = ((W[0].rb ^ W[6].rb ^ W[7].rb)>>32);
+		A[3] = (W[0].rb ^ W[6].rb ^ W[7].rb);
+		A[4] = M[0];
+		A[5] = M[1];
+		
+		F_func(A);
+		
+		t.lb = (((u64)A[0])<<32) ^ ((u64)A[1]) ^ W[4].lb;
+		t.rb = (((u64)A[2])<<32) ^ ((u64)A[3]) ^ W[4].rb;
+
+		for (int j = 7; j > 0; j--)
+			W[j] = W[j-1];
+		
+		W[0] = t;
+	
+		M[0] = A[4];
+		M[1] = A[5];
+	}
+	return 0;
+}
+
+    int gen_key(u_int *B, u64 *z) {
+	u_int A[6];
+	A[0] = B[0];
+	A[1] = B[9];
+	A[2] = B[16];
+	A[3] = B[19];
+	A[4] = B[30] ^ M[0];
+	A[5] = B[31] ^ M[1];
+
+	F_func(A);
+
+	for (int i = 31; i >= 2; i--)
+	       B[i] = B[i-2];
+	
+	B[0] = A[1];
+	B[1] = A[2];
+	
+	u64 new_M = (((u64)M[0])<<32) | ((u64)(M[1]));
+	new_M += 1;
+	M[0] = (u_int)(new_M >> 32);
+	M[1] = (u_int)(new_M & 0xFFFFFFFFULL);
+
+	*z = (((u64)(A[0]))<<32) ^ ((u64)(A[4]));
+	return 0;
+}
+
+/* Ma hoa & Giai ma */
+void dragon_state_init(u_int *B, u64 *key, u64 *iv, int kind)
 {
-    uint8_t b[4];
-    split_bytes(x, b);
+	element W[8];
+	int j, k;
 
-    return S1[b[0]] ^ S2[b[1]] ^ S1[b[2]] ^ S1[b[3]];
+	M[0] = 0x00004472;
+	M[1] = 0x61676F6E;
+
+	init_key(key, iv, W, kind);
+
+	for (j = 0, k = 0; k < 8; k++, j += 4) {
+		B[j]     = (u_int)(W[k].lb >> 32);
+		B[j + 1] = (u_int)(W[k].lb);
+		B[j + 2] = (u_int)(W[k].rb >> 32);
+		B[j + 3] = (u_int)(W[k].rb);
+	}
 }
 
-uint32_t H1(uint32_t x)
+void dragon_crypt(u_int *B, const uint8_t *in, uint8_t *out, size_t len)
 {
-    uint8_t b[4];
-    split_bytes(x, b);
+	u64 z;
+	size_t i = 0;
+	int k;
 
-    return S2[b[0]] ^ S2[b[1]] ^ S2[b[2]] ^ S1[b[3]];
+	while (i < len) {
+		gen_key(B, &z);                       
+		for (k = 0; k < 8 && i < len; k++, i++)
+			out[i] = in[i] ^ (uint8_t)(z >> (56 - 8 * k));
+	}
 }
-
-uint32_t H2(uint32_t x)
-{
-    uint8_t b[4];
-    split_bytes(x, b);
-
-    return S2[b[0]] ^ S2[b[1]] ^ S1[b[2]] ^ S2[b[3]];
-}
-
-uint32_t H3(uint32_t x)
-{
-    uint8_t b[4];
-    split_bytes(x, b);
-
-    return S2[b[0]] ^ S1[b[1]] ^ S2[b[2]] ^ S2[b[3]];
-}
-
-////////Ket thuc phan S-Box////////
