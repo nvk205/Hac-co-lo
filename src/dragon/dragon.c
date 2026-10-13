@@ -324,3 +324,35 @@ int init_key(u64 *key, u64 *iv, element *W,  int n) {
 	*z = (((u64)(A[0]))<<32) ^ ((u64)(A[4]));
 	return 0;
 }
+
+/* Ma hoa & Giai ma */
+void dragon_state_init(u_int *B, u64 *key, u64 *iv, int kind)
+{
+	element W[8];
+	int j, k;
+
+	M[0] = 0x00004472;
+	M[1] = 0x61676F6E;
+
+	init_key(key, iv, W, kind);
+
+	for (j = 0, k = 0; k < 8; k++, j += 4) {
+		B[j]     = (u_int)(W[k].lb >> 32);
+		B[j + 1] = (u_int)(W[k].lb);
+		B[j + 2] = (u_int)(W[k].rb >> 32);
+		B[j + 3] = (u_int)(W[k].rb);
+	}
+}
+
+void dragon_crypt(u_int *B, const uint8_t *in, uint8_t *out, size_t len)
+{
+	u64 z;
+	size_t i = 0;
+	int k;
+
+	while (i < len) {
+		gen_key(B, &z);                       
+		for (k = 0; k < 8 && i < len; k++, i++)
+			out[i] = in[i] ^ (uint8_t)(z >> (56 - 8 * k));
+	}
+}
