@@ -33,21 +33,9 @@ Tính phi tuyến của thuật toán được cung cấp bởi hai bảng tra c
 - **Tính chất cân bằng:** Trên toàn bộ $256$ phần tử của mỗi S-box, tại bất kỳ vị trí bit đầu ra nào (từ bit $0$ đến bit $31$), số lượng bit $1$ và bit $0$ luôn xuất hiện chính xác $128$ lần.
 - **Các hàm thành phần $G_1, G_2, G_3$ và $H_1, H_2, H_3$:** Nhận đầu vào là một từ $32$-bit $x$ được tách thành $4$ byte riêng biệt $x = x_0 \parallel x_1 \parallel x_2 \parallel x_3$ (với $x_0$ là byte cao nhất):
 
-$$
-\begin{aligned}
-G_1(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\
-G_2(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\
-G_3(x) &= S_1[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_1[x_3]
-\end{aligned}
-$$
+  $\begin{aligned} G_1(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\ G_2(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\ G_3(x) &= S_1[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_1[x_3] \end{aligned}$
 
-$$
-\begin{aligned}
-H_1(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\
-H_2(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\
-H_3(x) &= S_2[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_2[x_3]
-\end{aligned}
-$$
+  $\begin{aligned} H_1(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\ H_2(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\ H_3(x) &= S_2[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_2[x_3] \end{aligned}$
 
 ### 2.3. Hàm cập nhật phi tuyến $F$ (`F_func`)
 Hàm $F$ nhận vào một mảng $6$ phần tử $32$-bit: $A = (A_0, A_1, A_2, A_3, A_4, A_5)$ và biến đổi trực tiếp qua $6$ lớp phép toán liên tiếp (kết hợp giữa phép cộng modulo $2^{32}$ và phép XOR $\oplus$):
