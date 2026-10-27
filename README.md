@@ -173,13 +173,13 @@ Bảng phân chia nhiệm vụ các thành viên thực hiện dự án:
 
 | STT | Họ và tên | MSSV | Công việc phụ trách |
 | :---: | :--- | :---: | :--- |
-| 1 | Nguyễn Văn Khánh | `20233465` | Nghiên cứu lý thuyết mật mã Dragon, thiết kế cấu trúc `dragon.h` và cài đặt các bảng S-box, hàm `G_box`, `H_box`, `F_func`. |
-| 2 | Phạm Văn Huấn | `20233421` | Cài đặt giai đoạn khởi tạo khóa `init_key`, sinh dòng khóa `gen_key` và các hàm mã hóa/giải mã `dragon_state_init`, `dragon_crypt`. |
-| 3 | Nguyễn Tuấn Phong   | `20233575` | Xây dựng bộ tự kiểm tra `dragon_selftest`, viết module đọc và kiểm thử tự động `test_dragon.c` cùng tệp dữ liệu `vectors.txt`. |
-| 4 | Hạp Tiến Duy Anh   | `20233245` | Xây dựng chương trình chính `main.c`, kịch bản tương tác `encrypt_demo`, biên soạn tài liệu `README.md` và chuẩn bị slide thuyết trình. |
-| 5 | Hoàng Đức An   | `20233234` | Nghiên cứu lý thuyết mật mã Dragon, thiết kế cấu trúc `dragon.h` và cài đặt các bảng S-box, hàm `G_box`, `H_box`, `F_func`. |
-| 6 | Đoàn Ngọc Đức   | `20233322` | Cài đặt giai đoạn khởi tạo khóa `init_key`, sinh dòng khóa `gen_key` và các hàm mã hóa/giải mã `dragon_state_init`, `dragon_crypt`. |
-| 7 | Hà Xuân Chinh   | `20233288` | Xây dựng bộ tự kiểm tra `dragon_selftest`, viết module đọc và kiểm thử tự động `test_dragon.c` cùng tệp dữ liệu `vectors.txt`. |
+| 1 | Nguyễn Văn Khánh | `20233465` | Nghiên cứu lý thuyết mật mã Dragon, thiết kế cấu trúc `dragon.h` và cài đặt các bảng S-box. |
+| 2 | Phạm Văn Huấn | `20233421` |  Cài đặt các hàm `G_box`, `H_box`, `F_func`. |
+| 3 | Nguyễn Tuấn Phong   | `20233575` | Bổ sung hàm init_key trong file dragon.c. |
+| 4 | Hạp Tiến Duy Anh   | `20233245` | - Thêm các hàm dragon_state_init và dragon_crypt (xử lý nhập bản rõ Plain text và giải mã). |
+| 5 | Hoàng Đức An   | `20233234` | Thêm hàm dragon_selftest để kiểm thử độc lập các hàm xử lý. |
+| 6 | Đoàn Ngọc Đức   | `20233322` | Hoàn thiện file test_dragon.c (thêm hàm test DRAGON hoàn chỉnh, refactor logic xử lý key và IV).Tạo mới và cập nhật file vectors.txt cho các bộ test 128-bit và 256-bit |
+| 7 | Hà Xuân Chinh   | `20233288` | Viết chương trình chính (hàm main) dùng để khởi tạo và chạy thử nghiệm toàn bộ thuật toán. |
 | 8 | Nguyễn Chí Tâm   | `20233630` | Xây dựng chương trình chính `main.c`, kịch bản tương tác `encrypt_demo`, biên soạn tài liệu `README.md` và chuẩn bị slide thuyết trình. |
-| 9 | Hoàng Anh Dũng   | `20233344` | Nghiên cứu lý thuyết mật mã Dragon, thiết kế cấu trúc `dragon.h` và cài đặt các bảng S-box, hàm `G_box`, `H_box`, `F_func`. |
+| 9 | Hoàng Anh Dũng   | `20233344` | Viết và cập nhật hàm gen_key (sinh chuỗi khóa stream). |
 | 10 | Nguyễn Đức Duy   | `20233366` | Cài đặt giai đoạn khởi tạo khóa `init_key`, sinh dòng khóa `gen_key` và các hàm mã hóa/giải mã `dragon_state_init`, `dragon_crypt`. |
