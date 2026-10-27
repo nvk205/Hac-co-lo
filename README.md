@@ -30,18 +30,24 @@ Cấu trúc toán học của thuật toán Dragon dựa trên một Thanh ghi d
 
 ### 2.2. Hộp thay thế (S-boxes) và các hàm $G, H$
 Tính phi tuyến của thuật toán được cung cấp bởi hai bảng tra cứu tĩnh `sbox1` ($S_1$) và `sbox2` ($S_2$). Mỗi bảng gồm $256$ phần tử $32$-bit ($8 \times 32$-bit S-box):
-* **Tính chất cân bằng:** Trên toàn bộ $256$ phần tử của mỗi S-box, tại bất kỳ vị trí bit đầu ra nào (từ bit $0$ đến bit $31$), số lượng bit $1$ và bit $0$ luôn xuất hiện chính xác $128$ lần.
-* **Các hàm thành phần $G_1, G_2, G_3$ và $H_1, H_2, H_3$:** Nhận đầu vào là một từ $32$-bit $x$ được tách thành $4$ byte riêng biệt $x = x_0 \parallel x_1 \parallel x_2 \parallel x_3$ (với $x_0$ là byte cao nhất):
-  $$\begin{aligned}
-  G_1(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\
-  G_2(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\
-  G_3(x) &= S_1[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_1[x_3]
-  \end{aligned}$$
-  $$\begin{aligned}
-  H_1(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\
-  H_2(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\
-  H_3(x) &= S_2[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_2[x_3]
-  \end{aligned}$$
+- **Tính chất cân bằng:** Trên toàn bộ $256$ phần tử của mỗi S-box, tại bất kỳ vị trí bit đầu ra nào (từ bit $0$ đến bit $31$), số lượng bit $1$ và bit $0$ luôn xuất hiện chính xác $128$ lần.
+- **Các hàm thành phần $G_1, G_2, G_3$ và $H_1, H_2, H_3$:** Nhận đầu vào là một từ $32$-bit $x$ được tách thành $4$ byte riêng biệt $x = x_0 \parallel x_1 \parallel x_2 \parallel x_3$ (với $x_0$ là byte cao nhất):
+
+$$
+\begin{aligned}
+G_1(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\
+G_2(x) &= S_1[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\
+G_3(x) &= S_1[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_1[x_3]
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+H_1(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_2[x_2] \oplus S_1[x_3] \\
+H_2(x) &= S_2[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_2[x_3] \\
+H_3(x) &= S_2[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_2[x_3]
+\end{aligned}
+$$
 
 ### 2.3. Hàm cập nhật phi tuyến $F$ (`F_func`)
 Hàm $F$ nhận vào một mảng $6$ phần tử $32$-bit: $A = (A_0, A_1, A_2, A_3, A_4, A_5)$ và biến đổi trực tiếp qua $6$ lớp phép toán liên tiếp (kết hợp giữa phép cộng modulo $2^{32}$ và phép XOR $\oplus$):
@@ -176,7 +182,7 @@ Bảng phân chia nhiệm vụ các thành viên thực hiện dự án:
 | 1 | Nguyễn Văn Khánh | `20233465` | Nghiên cứu lý thuyết mật mã Dragon, thiết kế cấu trúc `dragon.h` và cài đặt các bảng S-box. |
 | 2 | Phạm Văn Huấn | `20233421` |  Cài đặt các hàm `G_box`, `H_box`, `F_func`. |
 | 3 | Nguyễn Tuấn Phong   | `20233575` | Bổ sung hàm init_key trong file dragon.c. |
-| 4 | Hạp Tiến Duy Anh   | `20233245` | - Thêm các hàm dragon_state_init và dragon_crypt (xử lý nhập bản rõ Plain text và giải mã). |
+| 4 | Hạp Tiến Duy Anh   | `20233245` | Thêm dragon_state_init và dragon_crypt (xử lý nhập bản rõ Plain text và giải mã). |
 | 5 | Hoàng Đức An   | `20233234` | Thêm hàm dragon_selftest để kiểm thử độc lập các hàm xử lý. |
 | 6 | Đoàn Ngọc Đức   | `20233322` | Hoàn thiện file test_dragon.c (thêm hàm test DRAGON hoàn chỉnh, refactor logic xử lý key và IV).Tạo mới và cập nhật file vectors.txt cho các bộ test 128-bit và 256-bit |
 | 7 | Hà Xuân Chinh   | `20233288` | Viết chương trình chính (hàm main) dùng để khởi tạo và chạy thử nghiệm toàn bộ thuật toán. |
