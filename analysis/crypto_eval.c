@@ -26,7 +26,7 @@ static unsigned int dem_bit_1(uint32_t x) {
 }
 
 /* Hàm tính khoảng cách Hamming giữa 2 trạng thái 1024 bit */
-static unsigned int dem_bit_khac_nha(const uint32_t state_a[32], const uint32_t state_b[32]) {
+static unsigned int dem_bit_khac_nhau(const uint32_t state_a[32], const uint32_t state_b[32]) {
     unsigned int so_bit_khac_nhau = 0;
 
     for (unsigned int i = 0; i < 32; ++i) {
