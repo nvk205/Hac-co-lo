@@ -3,7 +3,7 @@
 #include "dragon_sbox.h"
 
 /* Khởi tạo bảng tra cứu S-box 1 */
-const unsigned int sbox1[256] = {
+const u_int sbox1[256] = {
     0x393BCE6B,0x232BA00D,0x84E18ADA,0x84557BA7,0x56828948,0x166908F3,
     0x414A3437,0x7BB44897,0x2315BE89,0x7A01F224,0x7056AA5D,0x121A3917,
     0xE3F47FA2,0x1F99D0AD,0x9BAD518B,0x99B9E75F,0x8829A7ED,0x2C511CA9,
@@ -50,7 +50,7 @@ const unsigned int sbox1[256] = {
 };
 
 /* Khởi tạo bảng tra cứu S-box 2 */
-const unsigned int sbox2[256] = {
+const u_int sbox2[256] = {
     0xA94BC384,0xF7A81CAE,0xAB84ECD4,0x00DEF340,0x8E2329B8,0x23AF3A22,
     0x23C241FA,0xAED8729E,0x2E59357F,0xC3ED78AB,0x687724BB,0x7663886F,
     0x1669AA35,0x5966EAC1,0xD574C543,0xDBC3F2FF,0x4DD44303,0xCD4F8D01,
