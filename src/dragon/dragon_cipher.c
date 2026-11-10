@@ -18,16 +18,17 @@ void dragon_encrypt_buffer(const uint8_t *input, size_t input_len, uint8_t *outp
     while (offset + 8 <= input_len) {
     
         dragon_get_next_block(state, block);
-        
         for (int i = 0; i < 8; i++) {
             output[offset + i] = input[offset + i] ^ block[i];
         }
-    
+        // Dịch chuyển offset lên 8 byte
+        offset += 8;
+    }
     if (offset < input_len) {
 
         dragon_get_next_block(state, block);
         size_t rem = input_len - offset;
-    
+
         for (size_t i = 0; i < rem; i++) {
             output[offset + i] = input[offset + i] ^ block[i];
         }
