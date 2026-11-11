@@ -84,4 +84,36 @@ int init_key(Dragon_Ctx *key, Dragon_Ctx *iv, Dragon_Ctx *W, int n)
 		W->B[31] = iv->B[7];
 	}
 	
+	uint32_t A[6];
+	uint32_t new_B[4];
+	for (int i = 0; i <16; i++){
+	/*
+	Mảng A gồm  phần tử a,b,c,d,e,f
+	Trong đó: a||b||c||d = (W0 XOR W6 XOR W7)
+				e||f = M
+	*/
+	A[0] = W->B[0] ^ W->B[24] ^ W->B[28];
+    A[1] = W->B[1] ^ W->B[25] ^ W->B[29];
+    A[2] = W->B[2] ^ W->B[26] ^ W->B[30];
+    A[3] = W->B[3] ^ W->B[27] ^ W->B[31];
+	A[4] = W->M_L;
+    A[5] = W->M_H;
+
+	//{a',b',c',d'} = F(a,b,c,d,e,f)
+	F_func(A);
+	//W0 = (a'||b'||c'||d') XOR W4
+	W->B[0] = A[0] ^ W->B[16];
+	W->B[1] = A[1] ^ W->B[17];
+	W->B[2] = A[2] ^ W->B[18];
+	W->B[3] = A[3] ^ W->B[19];
+	//Wi =Wi-1 for i = 7 to 1
+	for (int j = 31; j >=4; j--){
+		W->B[j] = W->B[j-4];
+	}
+	//M = e'||f'
+	W->M_L = A[4];
+	W->M_H = A[5];
 }
+	return 0;
+}
+

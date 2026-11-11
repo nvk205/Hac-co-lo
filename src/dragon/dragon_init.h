@@ -6,4 +6,6 @@
 #include <stdint.h>
 #include "dragon.h"
 
+int init_key(Dragon_Ctx *key, Dragon_Ctx *iv, Dragon_Ctx *W, int n);
+
 #endif
