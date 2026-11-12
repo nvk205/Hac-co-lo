@@ -4,15 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
- // Từng nhóm 4 byte thành từ 32-bit 
+ 
 static void bytes_to_words(const uint8_t *bytes, uint32_t *words, size_t num_words) {
-    for (size_t i = 0; i < num_words; i++) {
-        // Ép byte sang uint32_t trước khi dịch bit trái
-        // - bytes[4*i] dịch 24 bit 
-        // - bytes[4*i + 1] dịch 16 bit 
-        // - bytes[4*i + 2] dịch 8 bit  
-        // - bytes[4*i + 3] k thay đổi       
+    for (size_t i = 0; i < num_words; i++) {     
         words[i] = ((uint32_t)bytes[4 * i]     << 24) |
                    ((uint32_t)bytes[4 * i + 1] << 16) |
                    ((uint32_t)bytes[4 * i + 2] << 8)  |
@@ -39,4 +33,22 @@ static int setup_cipher_state(Dragon_Ctx *W, const uint8_t *key, const uint8_t *
     // Gọi hàm dragon_init.c để trộn key và iv qua 16 vòng
     init_key(&key_ctx, &iv_ctx, W, mode);
     return 0;
+}
+
+static void get_next_keystream_block(Dragon_Ctx *ctx, uint8_t block[8]) {
+    uint32_t w1 = 0, w2 = 0;
+    
+    dragon_generate_keystream(ctx, &w1, &w2);
+    // Tách từ 32-bit thứ nhất (w1) thành 4 byte đầu của mảng
+    // Dịch phải và & 0xFF để xóa bit cao
+    block[0] = (uint8_t)((w1 >> 24) & 0xFF); 
+    block[1] = (uint8_t)((w1 >> 16) & 0xFF); 
+    block[2] = (uint8_t)((w1 >> 8)  & 0xFF); 
+    block[3] = (uint8_t)(w1 & 0xFF);         
+
+    // Tách từ 32-bit thứ hai (w2) thành 4 byte tiếp của mảng
+    block[4] = (uint8_t)((w2 >> 24) & 0xFF);
+    block[5] = (uint8_t)((w2 >> 16) & 0xFF);
+    block[6] = (uint8_t)((w2 >> 8)  & 0xFF);
+    block[7] = (uint8_t)(w2 & 0xFF);
 }
