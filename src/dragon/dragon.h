@@ -6,7 +6,7 @@
 #include "dragon_sbox.h"
 
 typedef struct {
-    uint32_t B[32];
+    uint32_t B[32]; // 32 phần tử 32 bit
     uint32_t M_L;
     uint32_t M_H;
 } Dragon_Ctx;
