@@ -4,12 +4,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// Khởi tạo trạng thái ban đầu
-void dragon_init(uint32_t *state, const uint8_t *key, const uint8_t *iv);
+// Mã hóa hoặc giải mã một vùng nhớ có độ dài byte bất kỳ
+int dragon_xcrypt_buffer(const uint8_t *key, const uint8_t *iv, uint32_t key_bits,
+                         const uint8_t *input, uint8_t *output, size_t length);
 
-void dragon_get_next_block(uint32_t *state, uint8_t block[8]);
+// Mã hóa hoặc giải mã trực tiếp một file bất kỳ
+int dragon_xcrypt_file(const char *in_filepath, const char *out_filepath,
+                       const uint8_t *key, const uint8_t *iv, uint32_t key_bits);
 
-// Mã hóa vùng nhớ buffer với độ dài bất kỳ
-void dragon_encrypt_buffer(const uint8_t *input, size_t input_len,  uint8_t *output, const uint8_t *key, const uint8_t *iv);
+#endif
 
-#endif 

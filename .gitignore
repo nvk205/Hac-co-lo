@@ -1,24 +1,25 @@
-
+# Chặn toàn bộ file thực thi và file biên dịch C/C++ trên Windows & Linux
 *.o
-*.out
+*.obj
 *.exe
+*.out
 *.dll
 *.so
+*.a
 
+# Chặn các file thực thi đầu ra 
+dragon_cli
+test_dragon
+crypto_eval
+src/dragon/main.exe
+
+# Chặn file kết quả tạm và bộ nhớ đệm Python (cho phần Giao diện của TV8, TV9)
 __pycache__/
-*.pyc
+*.py[cod]
+*.csv
 
+# Chặn thư mục cấu hình IDE của các thành viên
 .vscode/
 .idea/
-*.suo
-*.sln
-
+*.swp
 .DS_Store
-Thumbs.db
-
-*.log
-
-output/
-*.log
-output/
-/.vs
