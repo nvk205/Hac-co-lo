@@ -59,6 +59,7 @@ int dragon_xcrypt_buffer(const uint8_t *key, const uint8_t *iv, uint32_t key_bit
     if (!key || !iv || (!input && length > 0) || (!output && length > 0)) {
         return -1;
     }
+    
     if (length == 0) {
         return (key_bits == 128 || key_bits == 256) ? 0 : -2;
     }
@@ -82,5 +83,49 @@ int dragon_xcrypt_buffer(const uint8_t *key, const uint8_t *iv, uint32_t key_bit
         }
         offset += chunk;
     }
+    return 0; 
+}
+
+int dragon_xcrypt_file(const char *in_filepath, const char *out_filepath,
+                       const uint8_t *key, const uint8_t *iv, uint32_t key_bits) {
+    if (!in_filepath || !out_filepath || !key || !iv) {
+        return -1;
+    }
+
+    Dragon_Ctx ctx;
+    int status = setup_cipher_state(&ctx, key, iv, key_bits);
+    if (status != 0) {
+        return status;
+    }
+
+    // Mở file ở chế độ đọc 
+    FILE *fin = fopen(in_filepath, "rb");
+    if (!fin) {
+        return -3; 
+    }
+    // Mở/tạo file ở chế độ 
+    FILE *fout = fopen(out_filepath, "wb");
+    if (!fout) {
+        fclose(fin); 
+        return -4;  
+    }
+    uint8_t in_buf[8], out_buf[8] , block[8];   
+    size_t bytes_read;  // Lưu số byte đọc được
+
+    while ((bytes_read = fread(in_buf, 1, 8, fin)) > 0) {
+        // Sinh 8 byte khóa dòng tiếp theo
+        get_next_keystream_block(&ctx, block);
+
+        for (size_t i = 0; i < bytes_read; i++) {
+            out_buf[i] = in_buf[i] ^ block[i]; }
+            
+        if (fwrite(out_buf, 1, bytes_read, fout) != bytes_read) {
+            fclose(fin);
+            fclose(fout);
+            return -5; }
+    }
+    fclose(fin);
+    fclose(fout);
+    
     return 0; 
 }
