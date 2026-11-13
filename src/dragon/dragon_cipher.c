@@ -15,7 +15,7 @@ static void bytes_to_words(const uint8_t *bytes, uint32_t *words, size_t num_wor
 }
 // Khởi tạo trạng thái Dragon_Ctx từ key và iv 
 static int setup_cipher_state(Dragon_Ctx *W, const uint8_t *key, const uint8_t *iv, uint32_t key_bits) {
-    //Định nghĩa độ dài khóa chuẩn là 128-bit hoặc 256-bit
+    //Định nghĩa độ dài khóa là 128-bit hoặc 256-bit
     if (key_bits != 128 && key_bits != 256) {
         return -2;
     }
@@ -51,4 +51,36 @@ static void get_next_keystream_block(Dragon_Ctx *ctx, uint8_t block[8]) {
     block[5] = (uint8_t)((w2 >> 16) & 0xFF);
     block[6] = (uint8_t)((w2 >> 8)  & 0xFF);
     block[7] = (uint8_t)(w2 & 0xFF);
+}
+
+int dragon_xcrypt_buffer(const uint8_t *key, const uint8_t *iv, uint32_t key_bits,
+                         const uint8_t *input, uint8_t *output, size_t length) {
+
+    if (!key || !iv || (!input && length > 0) || (!output && length > 0)) {
+        return -1;
+    }
+    if (length == 0) {
+        return (key_bits == 128 || key_bits == 256) ? 0 : -2;
+    }
+    // Khai báo biến trạng thái và nạp khóa vào
+    Dragon_Ctx ctx;
+    int status = setup_cipher_state(&ctx, key, iv, key_bits);
+    if (status != 0) {
+        return status; 
+    }
+    size_t offset = 0; // Vị trí byte đang xử lý trong mảng 
+    uint8_t block[8];  
+
+    while (offset < length) {
+        get_next_keystream_block(&ctx, block);
+        // - Nếu phần còn lại >= 8 byte lấy 8 byte
+        // - Nếu phần cuối lẻ lấy đúng 7 byte
+        size_t chunk = (length - offset >= 8) ? 8 : (length - offset);
+        //Phép XOR từng byte
+        for (size_t i = 0; i < chunk; i++) {
+            output[offset + i] = input[offset + i] ^ block[i];
+        }
+        offset += chunk;
+    }
+    return 0; 
 }
