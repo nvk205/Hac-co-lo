@@ -81,7 +81,7 @@ const uint8_t iv[16] = {
     };
 
     int test_encrypt_decrypt_roundtrip(void) {
-    int res = dragon_xcrypt_file("tests/ciphertext.bin","tests/plaintext.txt" , key, iv, 128);
+    int res = dragon_xcrypt_file("tests/plaintext.txt","tests/ciphertext.bin" , key, iv, 128);
     printf("Ma hoa ket thuc voi trang thai: %d\n", res);
     return (res == 0) ? 1 : 0;
 }
