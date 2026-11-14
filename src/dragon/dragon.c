@@ -9,12 +9,12 @@ void dragon_init_ctx(Dragon_Ctx *ctx) {
     ctx->M_H = 0;
 }
 
-void dragon_shift_nlfsr(Dragon_Ctx *ctx, uint32_t new_B30, uint32_t new_B31) {
-    for (int i = 0; i < 30; i++) {
-        ctx->B[i] = ctx->B[i + 2];
+void dragon_shift_nlfsr(Dragon_Ctx *ctx, uint32_t new_B0, uint32_t new_B1) {
+    for (int i = 31; i >= 2; i--) {
+        ctx->B[i] = ctx->B[i - 2];
     }
-    ctx->B[30] = new_B30;
-    ctx->B[31] = new_B31;
+    ctx->B[0] = new_B0;
+    ctx->B[1] = new_B1;
 }
 
 void dragon_generate_keystream(Dragon_Ctx *ctx, uint32_t *ks_word1, uint32_t *ks_word2) {
