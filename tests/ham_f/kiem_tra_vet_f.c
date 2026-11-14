@@ -13,7 +13,7 @@ static const uint32_t mau_co_ban[4][6] = {
      0x33462226, 0xB3A77837, 0x5A288C9D}
 };
 
-/* Ở tầng trộn đầu, a bằng 0xFFFFFFFF cộng với 1 nên quay về 0. */
+/* Kiểm tra phép cộng 0xFFFFFFFF + 1 quay về 0 trong từ 32 bit. */
 static const uint32_t mau_tran[4][6] = {
     {0xFFFFFFFF, 0, 0, 0, 0, 1},
     {0, 0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 1},
@@ -35,7 +35,7 @@ static int kiem_tra(const char *ten, const uint32_t mau[4][6])
 
     dragon_F(&y[0], &y[1], &y[2], &y[3], &y[4], &y[5]);
 
-    const uint32_t *cac_tang[] = {vet.in, vet.pre_mix, vet.sbox_layer, vet.out};
+    const uint32_t *cac_tang[] = {x, x, x, y};
     const char *ten_tang[] = {"đầu vào", "trộn đầu", "phi tuyến", "trộn cuối"};
 
     for (int tang = 0; tang < 4; tang++) {
@@ -63,5 +63,10 @@ static int kiem_tra(const char *ten, const uint32_t mau[4][6])
 
 int main(void)
 {
-    return kiem_tra("Bộ cơ bản", mau_co_ban);
+    /* Chạy cả hai bộ và cộng số trường hợp phát hiện lỗi. */
+    int so_loi = kiem_tra("Bộ cơ bản", mau_co_ban);
+    so_loi += kiem_tra("Phép cộng tràn 32 bit", mau_tran);
+
+    /* Trả về 0 khi cả hai bộ đều đạt, trả về 1 khi có lỗi. */
+    return so_loi != 0;
 }
