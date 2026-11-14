@@ -1,6 +1,6 @@
 # Hệ Mật Mã Dòng Dragon (eSTREAM) — Cài Đặt, Mô Phỏng Trực Quan & Phân Tích Mật Mã
 
-Dự án Bài tập lớn môn **Lý thuyết Mật mã** thực hiện bởi nhóm 10 sinh viên. Dự án tập trung vào việc cài đặt từ gốc bằng ngôn ngữ C (không phụ thuộc thư viện ngoài), mô phỏng trực quan hóa trạng thái bên trong (White-box Step-by-Step Visualizer) và đánh giá thống kê mật mã cho hệ mật dòng **Dragon** (hỗ trợ cả hai chế độ khóa 128-bit và 256-bit).
+Dự án Bài tập lớn môn **Lý thuyết Mật mã** thực hiện bởi nhóm 3. Dự án tập trung vào việc cài đặt từ gốc bằng ngôn ngữ C, mô phỏng trực quan hóa trạng thái bên trong (White-box Step-by-Step Visualizer) và đánh giá thống kê mật mã cho hệ mật dòng **Dragon** (hỗ trợ cả hai chế độ khóa 128-bit và 256-bit).
 
 ---
 
@@ -87,16 +87,16 @@ Hac-co-lo/
 
 | Thành viên | Tài khoản / Họ tên | Module phụ trách | Nhiệm vụ chi tiết | Tiến độ |
 | :---: | :--- | :--- | :--- | :---: |
-| **TV1** | `HuanPham1208` | `dragon_sbox.h/.c`<br>`test_G-H_func.c` | Cài đặt 2 bảng hằng số `sbox1[256]`, `sbox2[256]`, hàm phi tuyến `G_box`, `H_box` và viết bài test đơn vị cho hàm G, H. | ✅ Đã hoàn thành |
-| **TV2** | Thành viên 2 | `dragon_f.h/.c`<br>`so_do_ham_f.drawio` | Cài đặt 3 tầng hàm cập nhật trạng thái `F` (Pre-mixing, S-box layer, Post-mixing), lưu vết trung gian và vẽ sơ đồ khối hàm F. | ✅ Đã hoàn thành |
-| **TV3** | `nguyentuanphong257` | `dragon_init.h/.c` | Cài đặt thủ tục nạp khóa và IV cho cả hai chế độ 128-bit và 256-bit vào `Dragon_Ctx`, thực hiện 16 vòng khởi tạo trạng thái. | ✅ Đã hoàn thành |
-| **TV4** | `haxuanchinh05` | `dragon.h/.c` | Định nghĩa cấu trúc `Dragon_Ctx` (`B[32]`, `M_L`, `M_H`), cài đặt cơ chế dịch thanh ghi NLFSR 1024-bit và trích xuất 64-bit khóa dòng. | ✅ Đã hoàn thành |
-| **TV5** | Thành viên 5 | `dragon_cipher.h/.c`<br>`src/dragon/main.c` | Cài đặt hàm XOR mã hóa/giải mã dữ liệu độ dài bất kỳ, mã hóa file và xây dựng chương trình dòng lệnh `main.c`. | 🔄 Đang hoàn thiện `main.c` |
-| **TV6** | Thành viên 6 | `tests/test_dragon.c`<br>`tests/vectors.txt` | Kiểm thử tích hợp toàn bộ chu trình khởi tạo và sinh khóa đối chiếu với bộ Test Vectors chuẩn của eSTREAM. | ⏳ Đang ghép nối |
-| **TV7** | `HoangAn1603` | `analysis/crypto_eval.c` | Cài đặt hàm tính khoảng cách Hamming (`dem_bit_1`, `dem_bit_khac_nhau`), thực nghiệm Hiệu ứng thác đổ (Avalanche) và kiểm định Monobit. | 🔄 Đang viết hàm thực nghiệm |
-| **TV8** | Thành viên 8 | `gui/tab_visualizer.py` | Xây dựng giao diện mô phỏng từng bước (Step-by-step) hiển thị 32 ô thanh ghi `B[0..31]`, bộ đếm `M` và luồng biến đổi trong hàm `F`. | ⏳ Đang thực hiện |
-| **TV9** | Thành viên 9 | `gui/tab_cipher_charts.py`<br>`gui/app_main.py` | Xây dựng giao diện mã hóa văn bản/file trực tiếp (hiển thị phép XOR nhị phân/Hex) và vẽ biểu đồ thống kê Avalanche. | ⏳ Đang thực hiện |
-| **TV10** | `nvk205`<br>(Nguyễn Văn Khánh) | `Makefile`, `.gitignore`,<br>`README.md` | Thiết kế cấu trúc phân rã module, chuẩn hóa giao diện `.h`, viết kịch bản build đa nền tảng, kiểm duyệt Pull Request và quản lý nhánh Git. | ✅ Đang điều phối |
+| **TV1** | `Phạm Văn Huấn` | `dragon_sbox.h/.c`<br>`test_G-H_func.c` | Cài đặt 2 bảng hằng số `sbox1[256]`, `sbox2[256]`, hàm phi tuyến `G_box`, `H_box` và viết bài test đơn vị cho hàm G, H. |  Đã hoàn thành |
+| **TV2** | Nguyễn Chí Tâm | `dragon_f.h/.c`<br>`so_do_ham_f.drawio` | Cài đặt 3 tầng hàm cập nhật trạng thái `F` (Pre-mixing, S-box layer, Post-mixing), lưu vết trung gian và vẽ sơ đồ khối hàm F. |  Đã hoàn thành |
+| **TV3** | `Nguyễn Tuấn Phong` | `dragon_init.h/.c` | Cài đặt thủ tục nạp khóa và IV cho cả hai chế độ 128-bit và 256-bit vào `Dragon_Ctx`, thực hiện 16 vòng khởi tạo trạng thái. |  Đã hoàn thành |
+| **TV4** | `Hà Xuân Chinh` | `dragon.h/.c` | Định nghĩa cấu trúc `Dragon_Ctx` (`B[32]`, `M_L`, `M_H`), cài đặt cơ chế dịch thanh ghi NLFSR 1024-bit và trích xuất 64-bit khóa dòng. | Đã hoàn thành |
+| **TV5** | Hoàng Anh Dũng | `dragon_cipher.h/.c`<br>`src/dragon/main.c` | Cài đặt hàm XOR mã hóa/giải mã dữ liệu độ dài bất kỳ, mã hóa file và xây dựng chương trình dòng lệnh `main.c`. | Đang hoàn thiện `main.c` |
+| **TV6** | Đoàn Ngọc Đức | `tests/test_dragon.c`<br>`tests/vectors.txt` | Kiểm thử tích hợp toàn bộ chu trình khởi tạo và sinh khóa đối chiếu với bộ Test Vectors chuẩn của eSTREAM. |  Đang ghép nối |
+| **TV7** | `Hoàng Đức An` | `analysis/crypto_eval.c` | Cài đặt hàm tính khoảng cách Hamming (`dem_bit_1`, `dem_bit_khac_nhau`), thực nghiệm Hiệu ứng thác đổ (Avalanche) và kiểm định Monobit. | Đang viết hàm thực nghiệm |
+| **TV8** | Nguyễn Đức Duy | `gui/tab_visualizer.py` | Xây dựng giao diện mô phỏng từng bước (Step-by-step) hiển thị 32 ô thanh ghi `B[0..31]`, bộ đếm `M` và luồng biến đổi trong hàm `F`. | Đang thực hiện |
+| **TV9** | Hạp Tiến Duy Anh | `gui/tab_cipher_charts.py`<br>`gui/app_main.py` | Xây dựng giao diện mã hóa văn bản/file trực tiếp (hiển thị phép XOR nhị phân/Hex) và vẽ biểu đồ thống kê Avalanche. |  Đang thực hiện |
+| **TV10** | Nguyễn Văn Khánh | `Makefile`, `.gitignore`,<br>`README.md` | Thiết kế cấu trúc phân rã module, chuẩn hóa giao diện `.h`, viết kịch bản build đa nền tảng, kiểm duyệt Pull Request và quản lý nhánh Git. |  Đang điều phối |
 
 ---
 
