@@ -31,11 +31,13 @@ void dragon_generate_keystream(Dragon_Ctx *ctx, uint32_t *ks_word1, uint32_t *ks
     if (ctx->M_L == 0) {
         ctx->M_H++;
     }
-
-    // Tạm gán để biên dịch chạy thử trước khi ghép với Tâm
-    *ks_word1 = e;
-    *ks_word2 = f;
-    dragon_shift_nlfsr(ctx, a ^ b, c ^ d);
+// Gọi hàm cập nhật trạng thái F của Thành viên 2 (cập nhật trực tiếp a..f)
+    dragon_F(&a, &b, &c, &d, &e, &f);
+    //Dịch thanh ghi B đi 2 ô và nạp 2 từ phản hồi (a', d') vào đầu mảng
+    dragon_shift_nlfsr(ctx, a, d);
+    // Xuất 64-bit khóa dòng (z0 = a', z1 = e')
+    *ks_word1 = a;
+    *ks_word2 = e;
 }
 
 void dragon_print_state(const Dragon_Ctx *ctx) {
