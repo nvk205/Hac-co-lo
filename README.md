@@ -1,183 +1,160 @@
-# Dự Án Mật Mã Dòng Dragon (Dragon Stream Cipher)
+# Hệ Mật Mã Dòng Dragon (eSTREAM) — Cài Đặt, Mô Phỏng Trực Quan & Phân Tích Mật Mã
 
-Dự án cài đặt, kiểm thử và minh họa hoạt động của thuật toán mã hóa dòng **Dragon** bằng ngôn ngữ C. Mã nguồn hỗ trợ cả hai chế độ khóa $128$-bit và $256$-bit, tích hợp bộ tự kiểm tra (self-test), kiểm thử tự động qua Test Vectors chuẩn của eSTREAM và chương trình mã hóa/giải mã văn bản trực tiếp.
-
----
-
-## 1. Giới thiệu mã Dragon
-
-**Dragon** là một thuật toán mã hóa dòng hoạt động trên mức từ (word-based stream cipher), được thiết kế bởi các nhà nghiên cứu tại Viện An toàn Thông tin thuộc Đại học Công nghệ Queensland (QUT), Úc (bao gồm Ed Dawson, K. Chen, M. Henricksen, W. Millan, L. Simpson, H. Wu, v.v.).
-
-* **Bối cảnh ra đời:** Thuật toán được đệ trình vào năm 2005 cho dự án **eSTREAM** (thuộc mạng lưới ECRYPT Châu Âu) và đã xuất sắc vượt qua nhiều vòng đánh giá khắt khe để lọt vào **Giai đoạn 3 (Phase 3)** thuộc **Profile 1** (nhóm các thuật toán tối ưu hóa tốc độ cao trên phần mềm).
-* **Đặc điểm kỹ thuật:**
-  * Thay vì xử lý từng bit rời rạc như các hệ mật mã dòng LFSR truyền thống, Dragon xử lý dữ liệu theo các từ máy tính $32$-bit và $64$-bit, giúp tận dụng tối đa năng lực của các bộ vi xử lý hiện đại.
-  * Hỗ trợ hai độ dài khóa bí mật ($K$) và Vector khởi tạo ($IV$): **$128$-bit** và **$256$-bit**.
-  * Mỗi chu kỳ sinh khóa tạo ra một từ khóa (keystream word) có kích thước **$64$-bit**.
+Dự án Bài tập lớn môn **Lý thuyết Mật mã** thực hiện bởi nhóm 10 sinh viên. Dự án tập trung vào việc cài đặt từ gốc bằng ngôn ngữ C (không phụ thuộc thư viện ngoài), mô phỏng trực quan hóa trạng thái bên trong (White-box Step-by-Step Visualizer) và đánh giá thống kê mật mã cho hệ mật dòng **Dragon** (hỗ trợ cả hai chế độ khóa 128-bit và 256-bit).
 
 ---
 
-## 2. Cơ sở lý thuyết
+## 1. Tổng quan Kiến trúc Toán học của Hệ mật Dragon
 
-Cấu trúc toán học của thuật toán Dragon dựa trên một Thanh ghi dịch phản hồi phi tuyến (**NLFSR** - *Non-Linear Feedback Shift Register*) kết hợp với một bộ đếm trạng thái và hàm cập nhật phi tuyến $F$.
+Dragon là hệ mật dòng hướng từ (word-oriented stream cipher) thuộc dự án **eSTREAM**, vận hành trên các từ dữ liệu 32-bit với hai thành phần bộ nhớ trạng thái cốt lõi:
+* **Thanh ghi dịch phản hồi phi tuyến (NLFSR) kích thước 1024-bit:** Được chia thành 32 từ trạng thái 32-bit ký hiệu là $B[0], B[1], \dots, B[31]$.
+* **Bộ nhớ trạng thái kiêm bộ đếm 64-bit ($M$):** Được tách thành hai nửa 32-bit $(M_H, M_L)$. Khi khởi tạo, $M$ nhận hằng số `0x0000447261676F6E` (mã ASCII của chuỗi `"Dragon"`). Trong giai đoạn sinh khóa dòng, $M$ tăng thêm 1 sau mỗi nhịp để đảm bảo chu kỳ tối thiểu đạt ít nhất $2^{64}$.
 
-### 2.1. Trạng thái nội bộ (Internal State) và Bộ đếm (Counter)
-* **Thanh ghi trạng thái:** Có tổng kích thước $1024$ bit.
-  * Trong giai đoạn khởi tạo, trạng thái được biểu diễn thành $8$ phần tử $128$-bit ký hiệu là $W_0, W_1, \dots, W_7$ (mỗi phần tử gồm hai nửa $64$-bit là `lb` - *left block* và `rb` - *right block*).
-  * Trong giai đoạn sinh dòng khóa, trạng thái được chia nhỏ thành mảng $32$ từ $32$-bit ký hiệu là $B_0, B_1, \dots, B_{31}$.
-* **Bộ nhớ / Bộ đếm $M$:** Là một thanh ghi $64$-bit (chia thành hai nửa $32$-bit là $M_0$ và $M_1$), đóng vai trò ngăn chặn các cuộc tấn công trượt (slide attacks) và đảm bảo chu kỳ dòng khóa tối thiểu là $2^{64}$. Giá trị khởi tạo mặc định của $M$ là hằng số:
-  $$M = \text{0x0000447261676F6E}$$
-  *(Tương ứng với chuỗi ký tự ASCII `"Dragon"`).*
-
-### 2.2. Hộp thay thế (S-boxes) và các hàm $G, H$
-Tính phi tuyến của thuật toán được cung cấp bởi hai bảng tra cứu tĩnh `sbox1` ($S_1$) và `sbox2` ($S_2$). Mỗi bảng gồm $256$ phần tử $32$-bit ($8 \times 32$-bit S-box):
-- **Tính chất cân bằng:** Trên toàn bộ $256$ phần tử của mỗi S-box, tại bất kỳ vị trí bit đầu ra nào (từ bit $0$ đến bit $31$), số lượng bit $1$ và bit $0$ luôn xuất hiện chính xác $128$ lần.
-- **Các hàm thành phần $G_1, G_2, G_3$ và $H_1, H_2, H_3$:** Nhận đầu vào là một từ $32$-bit $x$ được tách thành $4$ byte riêng biệt $x = x_0 \parallel x_1 \parallel x_2 \parallel x_3$ (với $x_0$ là byte cao nhất):
-
-  $G_1(x) = S_1[x_0] \oplus S_1[x_1] \oplus S_1[x_2] \oplus S_2[x_3]$<br>
-  $G_2(x) = S_1[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_1[x_3]$<br>
-  $G_3(x) = S_1[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_1[x_3]$
-
-  $H_1(x) = S_2[x_0] \oplus S_2[x_1] \oplus S_2[x_2] \oplus S_1[x_3]$<br>
-  $H_2(x) = S_2[x_0] \oplus S_2[x_1] \oplus S_1[x_2] \oplus S_2[x_3]$<br>
-  $H_3(x) = S_2[x_0] \oplus S_1[x_1] \oplus S_2[x_2] \oplus S_2[x_3]$
-
-### 2.3. Hàm cập nhật phi tuyến $F$ (`F_func`)
-Hàm $F$ nhận vào một mảng $6$ phần tử $32$-bit: $A = (A_0, A_1, A_2, A_3, A_4, A_5)$ và biến đổi trực tiếp qua $6$ lớp phép toán liên tiếp (kết hợp giữa phép cộng modulo $2^{32}$ và phép XOR $\oplus$):
-1. **Lớp tiền xáo trộn XOR:** $A_1 \leftarrow A_1 \oplus A_0$; $A_3 \leftarrow A_3 \oplus A_2$; $A_5 \leftarrow A_5 \oplus A_4$.
-2. **Lớp tiền xáo trộn Cộng:** $A_2 \leftarrow (A_2 + A_1) \pmod{2^{32}}$; $A_4 \leftarrow (A_4 + A_3) \pmod{2^{32}}$; $A_0 \leftarrow (A_0 + A_5) \pmod{2^{32}}$.
-3. **Lớp S-box $G$:** $A_3 \leftarrow A_3 \oplus G_1(A_0)$; $A_5 \leftarrow A_5 \oplus G_2(A_2)$; $A_1 \leftarrow A_1 \oplus G_3(A_4)$.
-4. **Lớp S-box $H$:** $A_0 \leftarrow A_0 \oplus H_1(A_1)$; $A_2 \leftarrow A_2 \oplus H_2(A_3)$; $A_4 \leftarrow A_4 \oplus H_3(A_5)$.
-5. **Lớp hậu xáo trộn Cộng:** $A_3 \leftarrow (A_3 + A_0) \pmod{2^{32}}$; $A_5 \leftarrow (A_5 + A_2) \pmod{2^{32}}$; $A_1 \leftarrow (A_1 + A_4) \pmod{2^{32}}$.
-6. **Lớp hậu xáo trộn XOR:** $A_2 \leftarrow A_2 \oplus A_1$; $A_4 \leftarrow A_4 \oplus A_3$; $A_0 \leftarrow A_0 \oplus A_5$.
-
-### 2.4. Hai giai đoạn hoạt động chính
-1. **Khởi tạo khóa và IV (`init_key`):**
-   * Khóa $K$ và $IV$ được nạp vào $8$ phần tử $W_0 \dots W_7$ thông qua các tổ hợp ghép nối, XOR và đảo bit (`~`).
-   * Thuật toán thực hiện **$16$ vòng lặp xáo trộn** không sinh khóa. Ở mỗi vòng, giá trị $W_0 \oplus W_6 \oplus W_7$ cùng bộ đếm $M$ được đưa vào mảng $A$, chạy qua hàm $F$, sau đó kết hợp với $W_4$ để tạo ra phần tử mới đẩy vào $W_0$ (các phần tử cũ dịch phải $1$ vị trí), đồng thời cập nhật lại $M_0, M_1$.
-2. **Sinh dòng khóa (`gen_key`) và Mã hóa (`dragon_crypt`):**
-   * Tại mỗi bước sinh khóa, thuật toán trích xuất $6$ từ $32$-bit từ trạng thái $B$ và bộ đếm $M$:
-     $$A_0 = B_0, \quad A_1 = B_9, \quad A_2 = B_{16}, \quad A_3 = B_{19}, \quad A_4 = B_{30} \oplus M_0, \quad A_5 = B_{31} \oplus M_1$$
-   * Đưa mảng $A$ qua hàm `F_func(A)`.
-   * Dịch chuyển mảng trạng thái $B$ đi $2$ vị trí ($B_i \leftarrow B_{i-2}$), cập nhật $B_0 = A_1, B_1 = A_2$ và tăng bộ đếm $M \leftarrow (M + 1) \pmod{2^{64}}$.
-   * Xuất từ khóa $64$-bit:
-     $$z = (A_0 \ll 32) \oplus A_4$$
-   * **Mã hóa / Giải mã:** Mỗi từ khóa $z$ ($8$ byte) được tách từ byte cao nhất xuống byte thấp nhất để XOR trực tiếp với từng byte của bản rõ ($P_i$) tạo ra bản mã ($C_i$):
-     $$C_i = P_i \oplus K_i \quad \text{và} \quad P_i = C_i \oplus K_i$$
-
----
-
-## 3. Cấu trúc Repository
+### Luồng dữ liệu qua các Module trong dự án
 
 ```text
-├── dragon.h         # (dragon_3.h) File tiêu đề khai báo cấu trúc dữ liệu, hằng số và nguyên mẫu hàm
-├── dragon.c         # (dragon_3.c) Cài đặt lõi thuật toán Dragon, các S-box, hàm mã hóa và tự kiểm tra
-├── main.c           # (main_2.c)   Chương trình chính: in 16 từ khóa đầu tiên và demo mã hóa/giải mã
-├── test_dragon.c    #              Module đọc file vectors.txt và kiểm thử tự động các Test Vectors
-├── vectors.txt      #              Dữ liệu Test Vectors chuẩn cho chế độ 128-bit và 256-bit
-└── README.md        #              Tài liệu hướng dẫn và báo cáo tổng quan dự án
+                  [ Khóa Key & Vector khởi tạo IV (128-bit / 256-bit) ]
+                                            │
+                                            ▼
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ PHA 1: KHỞI TẠO TRẠNG THÁI (src/dragon/dragon_init.c)                                 │
+│  • Ghép Key, IV và phần bù (~Key, ~IV) lấp đầy 32 từ trạng thái B[0..31].             │
+│  • Gán bộ nhớ M = 0x0000447261676F6E ("Dragon").                                      │
+│  • Thực hiện 16 vòng lặp nhào trộn có phản hồi thông qua hàm cập nhật F.              │
+└───────────────────────────────────────────┬───────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ PHA 2: SINH DÒNG KHÓA - KEYSTREAM GENERATION (src/dragon/dragon.c)                    │
+│  • Tăng bộ đếm: M = M + 1 (tách thành M_H và M_L).                                    │
+│  • Trích xuất 6 từ từ NLFSR: a=B[0], b=B[9], c=B[16], d=B[19], e=B[30]^M_H, f=B[31]^M_L│
+│  • Đưa (a, b, c, d, e, f) qua HÀM CẬP NHẬT F (src/dragon/dragon_f.c):                 │
+│       ├── Tầng 1 (Pre-mixing):  Trộn tuyến tính bằng phép XOR (^) và cộng mod 2^32 (+)│
+│       ├── Tầng 2 (S-box Layer): Đi qua các hàm phi tuyến G1, G2, H                    │
+│       │                         tra cứu trên 2 hộp S-box 8x32-bit S1, S2              │
+│       │                         (src/dragon/dragon_sbox.c)                            │
+│       └── Tầng 3 (Post-mixing): Khuếch tán hoàn toàn bằng phép cộng mod 2^32 và XOR   │
+│  • Dịch thanh ghi B[0..31] đi 2 từ, phản hồi (a', d') vào đầu thanh ghi.              │
+│  • Xuất 64-bit (8 byte) khóa dòng mỗi nhịp: z_t = (a' || e').                         │
+└───────────────────────────────────────────┬───────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ PHA 3: MÃ HÓA / GIẢI MÃ DỮ LIỆU & ĐÁNH GIÁ (dragon_cipher.c & analysis/crypto_eval.c) │
+│  • Mã hóa / Giải mã đối xứng: Ciphertext = Plaintext XOR Keystream.                   │
+│  • Kiểm định Hiệu ứng thác đổ (Avalanche Effect) và phân bố thống kê chuỗi khóa.      │
+└───────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **Lưu ý khi biên dịch:** Đảm bảo các tệp mã nguồn được đổi tên về đúng chuẩn `dragon.h`, `dragon.c` và `main.c` trong cùng một thư mục trước khi biên dịch.
+---
 
-### Hướng dẫn Biên dịch và Chạy chương trình
-Sử dụng trình biên dịch `gcc` trên Terminal / Command Prompt:
+## 2. Cấu trúc Cây thư mục Dự án
+
+```text
+Hac-co-lo/
+├── .gitignore                              # Cấu hình loại trừ file rác biên dịch (.exe, .o, __pycache__)
+├── Makefile                                # Kịch bản biên dịch tự động đa nền tảng (Windows / Linux)
+├── README.md                               # Tài liệu kiến trúc hệ thống và hướng dẫn sử dụng
+│
+├── docs/
+│   └── so_do_ham_f.drawio                  # Sơ đồ khối chi tiết cấu trúc 3 tầng của hàm cập nhật F
+│
+├── src/
+│   └── dragon/
+│       ├── dragon_sbox.h / dragon_sbox.c   # Bảng hằng số S-box (sbox1, sbox2) và hàm biến đổi G_box, H_box
+│       ├── dragon_f.h / dragon_f.c         # Hàm cập nhật trạng thái F và cấu trúc lưu vết trung gian
+│       ├── dragon_init.h / dragon_init.c   # Khởi tạo Key/IV (128-bit & 256-bit) và 16 vòng trộn trạng thái
+│       ├── dragon.h / dragon.c             # Cấu trúc Dragon_Ctx, dịch thanh ghi NLFSR & sinh Keystream
+│       ├── dragon_cipher.h / dragon_cipher.c # Mã hóa và giải mã bộ đệm văn bản / tệp tin bất kỳ
+│       ├── main.c                          # Giao diện dòng lệnh (CLI) và xuất dữ liệu cho GUI
+│
+├── tests/
+│   ├── test_dragon.c                       # Kiểm thử tích hợp toàn hệ thống theo bộ Vector chuẩn
+│   └── vectors.txt                         # Bộ Test Vectors chuẩn của dự án eSTREAM cho hệ mật Dragon
+│
+├── analysis/
+│   └── crypto_eval.c                       # Đánh giá khoảng cách Hamming, Hiệu ứng thác đổ & tính ngẫu nhiên
+│
+└── gui/
+    ├── app_main.py                         # Cửa sổ giao diện chính tích hợp các tab chức năng
+    ├── tab_visualizer.py                   # Tab 1: Mô phỏng trực quan từng bước thanh ghi B[32], M và hàm F
+    └── tab_cipher_charts.py                # Tab 2: Mã hóa trực quan và biểu đồ phân tích mật mã
+```
+
+---
+
+## 3. Bảng Phân công Nhiệm vụ & Tiến độ (10 Thành viên)
+
+| Thành viên | Tài khoản / Họ tên | Module phụ trách | Nhiệm vụ chi tiết | Tiến độ |
+| :---: | :--- | :--- | :--- | :---: |
+| **TV1** | `HuanPham1208` | `dragon_sbox.h/.c`<br>`test_G-H_func.c` | Cài đặt 2 bảng hằng số `sbox1[256]`, `sbox2[256]`, hàm phi tuyến `G_box`, `H_box` và viết bài test đơn vị cho hàm G, H. | ✅ Đã hoàn thành |
+| **TV2** | Thành viên 2 | `dragon_f.h/.c`<br>`so_do_ham_f.drawio` | Cài đặt 3 tầng hàm cập nhật trạng thái `F` (Pre-mixing, S-box layer, Post-mixing), lưu vết trung gian và vẽ sơ đồ khối hàm F. | ✅ Đã hoàn thành |
+| **TV3** | `nguyentuanphong257` | `dragon_init.h/.c` | Cài đặt thủ tục nạp khóa và IV cho cả hai chế độ 128-bit và 256-bit vào `Dragon_Ctx`, thực hiện 16 vòng khởi tạo trạng thái. | ✅ Đã hoàn thành |
+| **TV4** | `haxuanchinh05` | `dragon.h/.c` | Định nghĩa cấu trúc `Dragon_Ctx` (`B[32]`, `M_L`, `M_H`), cài đặt cơ chế dịch thanh ghi NLFSR 1024-bit và trích xuất 64-bit khóa dòng. | ✅ Đã hoàn thành |
+| **TV5** | Thành viên 5 | `dragon_cipher.h/.c`<br>`src/dragon/main.c` | Cài đặt hàm XOR mã hóa/giải mã dữ liệu độ dài bất kỳ, mã hóa file và xây dựng chương trình dòng lệnh `main.c`. | 🔄 Đang hoàn thiện `main.c` |
+| **TV6** | Thành viên 6 | `tests/test_dragon.c`<br>`tests/vectors.txt` | Kiểm thử tích hợp toàn bộ chu trình khởi tạo và sinh khóa đối chiếu với bộ Test Vectors chuẩn của eSTREAM. | ⏳ Đang ghép nối |
+| **TV7** | `HoangAn1603` | `analysis/crypto_eval.c` | Cài đặt hàm tính khoảng cách Hamming (`dem_bit_1`, `dem_bit_khac_nhau`), thực nghiệm Hiệu ứng thác đổ (Avalanche) và kiểm định Monobit. | 🔄 Đang viết hàm thực nghiệm |
+| **TV8** | Thành viên 8 | `gui/tab_visualizer.py` | Xây dựng giao diện mô phỏng từng bước (Step-by-step) hiển thị 32 ô thanh ghi `B[0..31]`, bộ đếm `M` và luồng biến đổi trong hàm `F`. | ⏳ Đang thực hiện |
+| **TV9** | Thành viên 9 | `gui/tab_cipher_charts.py`<br>`gui/app_main.py` | Xây dựng giao diện mã hóa văn bản/file trực tiếp (hiển thị phép XOR nhị phân/Hex) và vẽ biểu đồ thống kê Avalanche. | ⏳ Đang thực hiện |
+| **TV10** | `nvk205`<br>(Nguyễn Văn Khánh) | `Makefile`, `.gitignore`,<br>`README.md` | Thiết kế cấu trúc phân rã module, chuẩn hóa giao diện `.h`, viết kịch bản build đa nền tảng, kiểm duyệt Pull Request và quản lý nhánh Git. | ✅ Đang điều phối |
+
+---
+
+## 4. Hướng dẫn Biên dịch và Chạy chương trình
+
+### Yêu cầu môi trường
+* Trình biên dịch C: `gcc` (MinGW-w64 trên Windows hoặc GCC trên Ubuntu/Linux).
+* Công cụ build: `make` (hoặc `mingw32-make` trên Windows).
+* Python 3.x (dành cho phần chạy giao diện trực quan trong thư mục `gui/`).
+
+### Cách 1: Sử dụng `Makefile` (Khuyên dùng)
+
+Mở Terminal (Git Bash / PowerShell / Ubuntu Terminal) tại thư mục gốc của dự án:
 
 ```bash
-# Biên dịch chương trình chính
-gcc -O2 main.c dragon.c -o dragon_app
+# 1. Biên dịch toàn bộ các chương trình thực thi
+make all
 
-# Chạy chương trình
-./dragon_app
+# 2. Chạy kiểm thử riêng hàm phi tuyến G, H và bảng S-box (của TV1)
+make test-gh
+
+# 3. Chạy bộ kiểm thử chuẩn eSTREAM Test Vectors (của TV6)
+make test
+
+# 4. Chạy chương trình phân tích mật mã & đánh giá hiệu ứng thác đổ (của TV7)
+make analysis
+
+# 5. Khởi chạy giao diện mô phỏng trực quan (của TV8 & TV9)
+make gui
+
+# 6. Xóa các file thực thi (.exe) và file tạm sau khi chạy xong
+make clean
+```
+
+### Cách 2: Biên dịch thủ công bằng lệnh `gcc` (Nếu máy không cài `make`)
+
+```bash
+# Biên dịch và chạy kiểm thử hàm G, H:
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/test_function/test_G-H_func.c -o test_gh_func
+./test_gh_func
+
+# Biên dịch chương trình chính (CLI):
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/dragon_f.c src/dragon/dragon_init.c src/dragon/dragon.c src/dragon/dragon_cipher.c src/dragon/main.c -o dragon_cli
+
+# Biên dịch bộ kiểm thử eSTREAM Vectors:
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/dragon_f.c src/dragon/dragon_init.c src/dragon/dragon.c src/dragon/dragon_cipher.c tests/test_dragon.c -o test_dragon
+
+# Biên dịch chương trình phân tích mật mã:
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/dragon_f.c src/dragon/dragon_init.c src/dragon/dragon.c src/dragon/dragon_cipher.c analysis/crypto_eval.c -o crypto_eval -lm
 ```
 
 ---
 
-## 4. Hàm và các chức năng trong hàm
+## 5. Quy tắc Làm việc Nhóm trên GitHub
 
-Hệ thống hàm trong dự án được phân tách rõ ràng theo từng nhiệm vụ từ toán học cấp thấp đến giao tiếp ứng dụng:
-
-| Tên hàm | Tệp nguồn | Đầu vào (Inputs) | Đầu ra (Outputs) | Chức năng chi tiết |
-| :--- | :--- | :--- | :--- | :--- |
-| `G_box` | `dragon.c` | `u_int x`, `int n` ($1..3$) | `u_int` ($32$-bit) | Tách từ $32$-bit `x` thành $4$ byte, tra bảng `sbox1`, `sbox2` theo công thức $G_n$ và trả về kết quả XOR. |
-| `H_box` | `dragon.c` | `u_int x`, `int n` ($1..3$) | `u_int` ($32$-bit) | Tách từ $32$-bit `x` thành $4$ byte, tra bảng `sbox1`, `sbox2` theo công thức $H_n$ và trả về kết quả XOR. |
-| `F_func` | `dragon.c` | `u_int *A` (mảng $6$ từ) | Trả về `0`; biến đổi trực tiếp mảng `A` | Thực hiện hàm cập nhật phi tuyến $F$ gồm $6$ vòng lặp cộng modulo $2^{32}$, XOR và gọi `G_box`, `H_box`. |
-| `init_key` | `dragon.c` | `u64 *key`, `u64 *iv`, `element *W`, `int n` | Trả về `0`; cập nhật `W` và `M` | Nạp khóa và IV vào mảng trạng thái $W$ ($n=1$ cho $128$-bit, $n \neq 1$ cho $256$-bit) và chạy $16$ vòng lặp xáo trộn khởi tạo. |
-| `gen_key` | `dragon.c` | `u_int *B` ($32$ từ), `u64 *z` | Trả về `0`; ghi từ khóa vào `*z`, cập nhật `B`, `M` | Thực hiện $1$ chu kỳ sinh khóa: rút trích trạng thái, gọi `F_func`, dịch thanh ghi $B$, cộng bộ đếm $M$ thêm $1$ và xuất $64$-bit khóa vào `z`. |
-| `dragon_state_init` | `dragon.c` | `u_int *B`, `u64 *key`, `u64 *iv`, `int kind` | `void`; khởi tạo hoàn chỉnh mảng `B` | Đặt lại bộ đếm $M$ về giá trị gốc (`0x0000447261676F6E`), gọi `init_key` và chuyển đổi $8$ phần tử $128$-bit từ $W$ sang $32$ từ $32$-bit của $B$. |
-| `dragon_crypt` | `dragon.c` | `u_int *B`, `const uint8_t *in`, `uint8_t *out`, `size_t len` | `void`; ghi dữ liệu đã mã hóa/giải mã vào `out` | Liên tục gọi `gen_key` để sinh từ khóa $64$-bit, cắt thành từng byte từ cao xuống thấp để XOR với mảng `in` tạo ra mảng `out`. |
-| `check` | `dragon.c` | `int ok`, `const char *name`, `int verbose` | Trả về `0` (Đạt) hoặc `1` (Lỗi) | Hàm phụ trợ in trạng thái kiểm thử `[PASS]` hoặc `[FAIL]` kèm tên bài kiểm tra ra màn hình. |
-| `dragon_selftest` | `dragon.c` | `int verbose` | Số lượng lỗi phát hiện (`int`) | Tự động kiểm tra tính toàn vẹn của `sbox1`, `sbox2` (giá trị đầu/cuối, tính cân bằng $128$ bit $1$), kiểm tra `G_box`, `H_box` và `F_func` với vector mẫu. |
-| `print_hex` | `main.c` | `const uint8_t *d`, `size_t n` | `void` (In ra màn hình) | In mảng byte dưới dạng chuỗi thập lục phân (Hex) viết hoa, cứ mỗi $8$ byte cách nhau bởi một khoảng trắng. |
-| `encrypt_demo` | `main.c` | `void` (Đọc từ `stdin`) | Trả về `0` nếu khớp, mã lỗi nếu thất bại | Cho phép người dùng nhập văn bản Plaintext từ bàn phím, tiến hành mã hóa sang bản mã Hex, giải mã ngược lại và đối chiếu với bản gốc. |
-| `main` | `main.c` | `void` | Trả về `0` | Điểm bắt đầu chương trình: sinh và in $16$ từ khóa $64$-bit đầu tiên của bộ khóa mẫu $128$-bit, sau đó gọi `encrypt_demo()`. |
-| `run_dragon_test` | `test_dragon.c` | `void` (Đọc file `vectors.txt`) | Tổng số lượt sai khác (`int`) | Đọc từng bộ `KEY`, `IV` và `KS` kỳ vọng từ file `vectors.txt`, chạy thuật toán và lập bảng đối chiếu từng từ khóa thực tế với lý thuyết. |
-
----
-
-## 5. Test Vector
-
-Dự án sử dụng hai tầng kiểm thử để đảm bảo thuật toán được cài đặt chính xác tuyệt đối tới từng bit:
-
-### 5.1. Tự kiểm tra nội bộ (`dragon_selftest`)
-Kiểm tra trực tiếp các thành phần toán học cơ sở:
-* **Kiểm tra biên S-box:** `sbox1[0] == 0x393BCE6B`, `sbox1[255] == 0x0192B555`, `sbox2[0] == 0xA94BC384`, `sbox2[255] == 0x51561E77`.
-* **Kiểm tra cân bằng bit:** Đảm bảo cả $32$ cột bit của `sbox1` và `sbox2` đều có tổng số bit $1$ bằng đúng $128$.
-* **Kiểm tra $G, H$ và $F$:** Đối chiếu kết quả đầu ra tại các điểm `x = 0x00000000`, `0x01020304`, `0xFFFFFFFF` và $3$ mảng đầu vào chuẩn của hàm `F_func`.
-
-### 5.2. Kiểm thử dòng khóa chuẩn (`vectors.txt` & `test_dragon.c`)
-Tệp `vectors.txt` chứa $4$ bộ Test Vectors kiểm tra $16$ từ khóa $64$-bit đầu tiên ($1024$ bit keystream) cho cả hai chế độ `DRAGON_128` và `DRAGON_256`:
-
-#### Bộ 1: 128-bit Set 1
-* **KEY (128-bit):** `00001111222233334444555566667777`
-* **IV (128-bit):** `00001111222233334444555566667777`
-* **Keystream kỳ vọng (4 từ 64-bit đầu tiên trên tổng 16 từ):**
-  * Từ 01: `99b3aa14b63bd02f`
-  * Từ 02: `e14358a454950425`
-  * Từ 03: `f4b0d3fd8ba69178`
-  * Từ 04: `e0392938a718c165`
-
-#### Bộ 2: 128-bit Set 2
-* **KEY (128-bit):** `00112233445566778899AABBCCDDEEFF`
-* **IV (128-bit):** `00112233445566778899AABBCCDDEEFF`
-* **Keystream kỳ vọng (4 từ 64-bit đầu tiên trên tổng 16 từ):**
-  * Từ 01: `988215060e87e695`
-  * Từ 02: `eb7aef36313ff910`
-  * Từ 03: `e6c7312f30357424`
-  * Từ 04: `4922043d98146ee2`
-
-#### Bộ 3: 256-bit Set 1
-* **KEY (256-bit):** `0000111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF`
-* **IV (256-bit):** `0000111122223333444455556666777788889999AAAABBBBCCCCDDDDEEEEFFFF`
-* **Keystream kỳ vọng (4 từ 64-bit đầu tiên trên tổng 16 từ):**
-  * Từ 01: `bc020767dc48dae3`
-  * Từ 02: `14778d8c927e8b32`
-  * Từ 03: `e086c6cde593c008`
-  * Từ 04: `600c9d47a488f622`
-
-#### Bộ 4: 256-bit Set 2
-* **KEY (256-bit):** `00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF`
-* **IV (256-bit):** `00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF`
-* **Keystream kỳ vọng (4 từ 64-bit đầu tiên trên tổng 16 từ):**
-  * Từ 01: `8d3ab9ba01daa3eb`
-  * Từ 02: `5cbd0f6de3ecfcab`
-  * Từ 03: `619af808cf9c4a42`
-  * Từ 04: `e28777666d2d7037`
-
----
-
-## 6. Phân công công việc
-
-Bảng phân chia nhiệm vụ các thành viên thực hiện dự án:
-
-| STT | Họ và tên | MSSV | Công việc phụ trách |
-| :---: | :--- | :---: | :--- |
-| 1 | Nguyễn Văn Khánh | `20233465` | Nghiên cứu lý thuyết mật mã Dragon, thiết kế cấu trúc `dragon.h` và cài đặt các bảng S-box. |
-| 2 | Phạm Văn Huấn | `20233421` |  Cài đặt các hàm `G_box`, `H_box`, `F_func`. |
-| 3 | Nguyễn Tuấn Phong   | `20233575` | Bổ sung hàm init_key trong file dragon.c. |
-| 4 | Hạp Tiến Duy Anh   | `20233245` | Thêm dragon_state_init và dragon_crypt (xử lý nhập bản rõ Plain text và giải mã). |
-| 5 | Hoàng Đức An   | `20233234` | Thêm hàm dragon_selftest để kiểm thử độc lập các hàm xử lý. |
-| 6 | Đoàn Ngọc Đức   | `20233322` | Hoàn thiện file test_dragon.c (thêm hàm test DRAGON hoàn chỉnh, refactor logic xử lý key và IV).Tạo mới và cập nhật file vectors.txt cho các bộ test 128-bit và 256-bit |
-| 7 | Hà Xuân Chinh   | `20233288` | Viết chương trình chính (hàm main) dùng để khởi tạo và chạy thử nghiệm toàn bộ thuật toán. |
-| 8 | Nguyễn Chí Tâm   | `20233630` | Xây dựng chương trình chính `main.c`, kịch bản tương tác `encrypt_demo`, biên soạn tài liệu `README.md` và chuẩn bị slide thuyết trình. |
-| 9 | Hoàng Anh Dũng   | `20233344` | Viết và cập nhật hàm gen_key (sinh chuỗi khóa stream). |
-| 10 | Nguyễn Đức Duy   | `20233366` | Cài đặt giai đoạn khởi tạo khóa `init_key`, sinh dòng khóa `gen_key` và các hàm mã hóa/giải mã `dragon_state_init`, `dragon_crypt`. |
+1. **Cập nhật nhánh `main` trước khi code:**
+   ```bash
+   git pull origin main
+   ```
+2. **Chỉ chỉnh sửa trên nhánh (branch) và tệp được phân công:** Không tự ý thay đổi nguyên mẫu hàm trong các tệp `.h` dùng chung nếu chưa thống nhất với nhóm trưởng (TV10) để tránh lỗi liên kết (`undefined reference`).
+3. **Không đẩy file thực thi lên kho lưu trữ:** Tuyệt đối không commit các file `.exe`, `.o`, `.out` lên GitHub. Chạy `make clean` trước khi thực hiện `git add` và `git commit`.
