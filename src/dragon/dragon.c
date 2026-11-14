@@ -1,5 +1,5 @@
 #include "dragon.h"
-
+#include "dragon_f.h" // kết nối hàm của Tâm
 void dragon_init_ctx(Dragon_Ctx *ctx) {
     if (!ctx) return;
     for (int i = 0; i < 32; i++) {
