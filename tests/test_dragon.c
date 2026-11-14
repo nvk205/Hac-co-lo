@@ -70,3 +70,18 @@ int test_Hbox_and_Gbox(const char *filepath) {
     printf("Ket qua test: %d/%d test dat.\n", passed_count, total);
     return (total > 0 && passed_count == total) ? 1 : 0;
 }
+
+const uint8_t key[16] = {
+        0x00, 0x00, 0x11, 0x11, 0x22, 0x22, 0x33, 0x33,
+        0x44, 0x44, 0x55, 0x55, 0x66, 0x66, 0x77, 0x77
+    };
+const uint8_t iv[16] = {
+        0x00, 0x00, 0x11, 0x11, 0x22, 0x22, 0x33, 0x33,
+        0x44, 0x44, 0x55, 0x55, 0x66, 0x66, 0x77, 0x77
+    };
+
+    int test_encrypt_decrypt_roundtrip(void) {
+    int res = dragon_xcrypt_file("tests/ciphertext.bin","tests/plaintext.txt" , key, iv, 128);
+    printf("Ma hoa ket thuc voi trang thai: %d\n", res);
+    return (res == 0) ? 1 : 0;
+}
