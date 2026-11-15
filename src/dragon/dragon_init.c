@@ -1,4 +1,5 @@
 #include "dragon_init.h"
+#include "dragon_f.h"
 
 
 //n để chọn mode: n=1 là 128 bit, n=0 là 256 bit
@@ -85,7 +86,6 @@ int init_key(Dragon_Ctx *key, Dragon_Ctx *iv, Dragon_Ctx *W, int n)
 	}
 	
 	uint32_t A[6];
-	uint32_t new_B[4];
 	for (int i = 0; i <16; i++){
 	/*
 	Mảng A gồm  phần tử a,b,c,d,e,f
@@ -100,7 +100,7 @@ int init_key(Dragon_Ctx *key, Dragon_Ctx *iv, Dragon_Ctx *W, int n)
     A[5] = W->M_H;
 
 	//{a',b',c',d'} = F(a,b,c,d,e,f)
-	F_func(A);
+	dragon_F(&A[0], &A[1], &A[2], &A[3], &A[4], &A[5]);
 	//W0 = (a'||b'||c'||d') XOR W4
 	W->B[0] = A[0] ^ W->B[16];
 	W->B[1] = A[1] ^ W->B[17];
