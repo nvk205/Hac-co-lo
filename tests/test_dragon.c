@@ -85,3 +85,58 @@ const uint8_t iv[16] = {
     printf("Ma hoa ket thuc voi trang thai: %d\n", res);
     return (res == 0) ? 1 : 0;
 }
+
+int test_f_function(const char *filepath) {
+    printf("TEST dragon_F (file: %s)\n", filepath);
+
+    FILE *fp = fopen(filepath, "r");
+    if (!fp) {
+        printf("Khong the mo file test: %s\n", filepath);
+        return 0;
+    }
+
+    char line[512];
+    int line_num = 0;
+    int total = 0;
+    int passed_count = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        line_num++;
+
+        char *p = line;
+        while (isspace((unsigned char)*p)) p++;
+
+        if (*p == '\0' || *p == '#') {
+            continue;
+        }
+
+        uint32_t a, b, c, d, e, f;
+        uint32_t exp_a, exp_b, exp_c, exp_d, exp_e, exp_f;
+
+        if (sscanf(p, " %x %x %x %x %x %x %x %x %x %x %x %x", &a, &b, &c, &d, &e, &f, &exp_a, &exp_b, &exp_c, &exp_d, &exp_e, &exp_f) != 12) {
+            printf("Dong %d sai dinh dang, bo qua: %s", line_num, line);
+            continue;
+        }
+
+        // Lưu đầy đủ cả 6 giá trị đầu vào trước khi hàm dragon_F() ghi đè
+        uint32_t in_a = a, in_b = b, in_c = c, in_d = d, in_e = e, in_f = f;
+
+        dragon_F(&a, &b, &c, &d, &e, &f);
+        total++;
+
+        if (a == exp_a && b == exp_b && c == exp_c && d == exp_d && e == exp_e && f == exp_f) {
+            passed_count++;
+            printf("[PASS] #%02d\n", total);
+            printf("Input: %08X %08X %08X %08X %08X %08X\n", in_a, in_b, in_c, in_d, in_e, in_f);
+            printf("Output: %08X %08X %08X %08X %08X %08X\n", a, b, c, d, e, f);
+        } else {
+            printf("[FAIL] #%02d | Dong %d sai ket qua!\n", total, line_num);
+            printf("Thuc te: %08X %08X %08X %08X %08X %08X\n", a, b, c, d, e, f);
+            printf("Ky vong: %08X %08X %08X %08X %08X %08X\n", exp_a, exp_b, exp_c, exp_d, exp_e, exp_f);
+        }
+    }
+
+    fclose(fp);
+    printf("Ket qua test ham F: %d/%d test dat.\n", passed_count, total);
+    return (total > 0 && passed_count == total) ? 1 : 0;
+}
