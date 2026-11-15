@@ -2,32 +2,18 @@
 #define DRAGON_H
 
 #include <stdint.h>
-#include <stddef.h>
-
-typedef uint64_t u64;
-typedef unsigned int u_int;
+#include <stdio.h>
+#include "dragon_sbox.h"
 
 typedef struct {
-    u64 lb;
-    u64 rb;
-} element;
+    uint32_t B[32]; // 32 phần tử 32 bit
+    uint32_t M_L;
+    uint32_t M_H;
+} Dragon_Ctx;
 
-extern unsigned int sbox1[256];
-extern unsigned int sbox2[256];
-
-int F_func(u_int *A);
-u_int G_box(u_int x, int n);
-u_int H_box(u_int x, int n);
-int init_key(u64 *key, u64 *iv, element *W, int n);
-int gen_key(u_int *B, u64 *z);
-
-#define DRAGON_128 1  
-#define DRAGON_256 2  
-
-void dragon_state_init(u_int *B, u64 *key, u64 *iv, int kind);
-
-void dragon_crypt(u_int *B, const uint8_t *in, uint8_t *out, size_t len);
-
-int dragon_selftest(int verbose);
+void dragon_init_ctx(Dragon_Ctx *ctx);
+void dragon_shift_nlfsr(Dragon_Ctx *ctx, uint32_t new_B30, uint32_t new_B31);
+void dragon_generate_keystream(Dragon_Ctx *ctx, uint32_t *ks_word1, uint32_t *ks_word2);
+void dragon_print_state(const Dragon_Ctx *ctx);
 
 #endif

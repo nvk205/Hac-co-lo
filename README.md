@@ -1,39 +1,160 @@
-# BTL_LTMM Rules
+# Hệ Mật Mã Dòng Dragon (eSTREAM) — Cài Đặt, Mô Phỏng Trực Quan & Phân Tích Mật Mã
 
-PHẦN 1: QUY TẮC LÀM VIỆC 
+Dự án Bài tập lớn môn **Lý thuyết Mật mã** thực hiện bởi nhóm 3. Dự án tập trung vào việc cài đặt từ gốc bằng ngôn ngữ C, mô phỏng trực quan hóa trạng thái bên trong (White-box Step-by-Step Visualizer) và đánh giá thống kê mật mã cho hệ mật dòng **Dragon** (hỗ trợ cả hai chế độ khóa 128-bit và 256-bit).
 
+---
 
-1. Không nộp bài thẳng vào thư mục chính (Nhánh main)
+## 1. Tổng quan Kiến trúc Toán học của Hệ mật Dragon
 
-    Thư mục chính (nhánh main) là nơi chứa bản code/báo cáo hoàn hảo nhất. Không ai được quyền sửa trực tiếp vào đây.
+Dragon là hệ mật dòng hướng từ (word-oriented stream cipher) thuộc dự án **eSTREAM**, vận hành trên các từ dữ liệu 32-bit với hai thành phần bộ nhớ trạng thái cốt lõi:
+* **Thanh ghi dịch phản hồi phi tuyến (NLFSR) kích thước 1024-bit:** Được chia thành 32 từ trạng thái 32-bit ký hiệu là $B[0], B[1], \dots, B[31]$.
+* **Bộ nhớ trạng thái kiêm bộ đếm 64-bit ($M$):** Được tách thành hai nửa 32-bit $(M_H, M_L)$. Khi khởi tạo, $M$ nhận hằng số `0x0000447261676F6E` (mã ASCII của chuỗi `"Dragon"`). Trong giai đoạn sinh khóa dòng, $M$ tăng thêm 1 sau mỗi nhịp để đảm bảo chu kỳ tối thiểu đạt ít nhất $2^{64}$.
 
-    Cách làm đúng: Khi bắt đầu làm việc, mỗi người phải tự "copy" ra một bản nháp riêng (gọi là tạo Branch / Nhánh mới). Làm xong xuôi trên bản nháp của mình mới tính tiếp.
+### Luồng dữ liệu qua các Module trong dự án
 
-2. Làm đến đâu, Commit đến đó
+```text
+                  [ Khóa Key & Vector khởi tạo IV (128-bit / 256-bit) ]
+                                            │
+                                            ▼
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ PHA 1: KHỞI TẠO TRẠNG THÁI (src/dragon/dragon_init.c)                                 │
+│  • Ghép Key, IV và phần bù (~Key, ~IV) lấp đầy 32 từ trạng thái B[0..31].             │
+│  • Gán bộ nhớ M = 0x0000447261676F6E ("Dragon").                                      │
+│  • Thực hiện 16 vòng lặp nhào trộn có phản hồi thông qua hàm cập nhật F.              │
+└───────────────────────────────────────────┬───────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ PHA 2: SINH DÒNG KHÓA - KEYSTREAM GENERATION (src/dragon/dragon.c)                    │
+│  • Tăng bộ đếm: M = M + 1 (tách thành M_H và M_L).                                    │
+│  • Trích xuất 6 từ từ NLFSR: a=B[0], b=B[9], c=B[16], d=B[19], e=B[30]^M_H, f=B[31]^M_L│
+│  • Đưa (a, b, c, d, e, f) qua HÀM CẬP NHẬT F (src/dragon/dragon_f.c):                 │
+│       ├── Tầng 1 (Pre-mixing):  Trộn tuyến tính bằng phép XOR (^) và cộng mod 2^32 (+)│
+│       ├── Tầng 2 (S-box Layer): Đi qua các hàm phi tuyến G1, G2, H                    │
+│       │                         tra cứu trên 2 hộp S-box 8x32-bit S1, S2              │
+│       │                         (src/dragon/dragon_sbox.c)                            │
+│       └── Tầng 3 (Post-mixing): Khuếch tán hoàn toàn bằng phép cộng mod 2^32 và XOR   │
+│  • Dịch thanh ghi B[0..31] đi 2 từ, phản hồi (a', d') vào đầu thanh ghi.              │
+│  • Xuất 64-bit (8 byte) khóa dòng mỗi nhịp: z_t = (a' || e').                         │
+└───────────────────────────────────────────┬───────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ PHA 3: MÃ HÓA / GIẢI MÃ DỮ LIỆU & ĐÁNH GIÁ (dragon_cipher.c & analysis/crypto_eval.c) │
+│  • Mã hóa / Giải mã đối xứng: Ciphertext = Plaintext XOR Keystream.                   │
+│  • Kiểm định Hiệu ứng thác đổ (Avalanche Effect) và phân bố thống kê chuỗi khóa.      │
+└───────────────────────────────────────────────────────────────────────────────────────┘
+```
 
-    Quy tắc: Viết xong 1 hàm, tạo xong 1 file test, hay viết xong phần 1 của báo cáo -> Phải Commit ngay với lời nhắn rõ ràng (VD: "Đã viết xong hàm mã hóa HDB3", "Sửa lỗi sai chính tả phần mở đầu"). Không gộp chung làm 1 tuần rồi mới Commit 1 cục siêu to.
+---
 
-3. Tạo Đơn Xin Nộp Bài (Pull Request - PR)
+## 2. Cấu trúc Cây thư mục Dự án
 
-    Sau khi làm xong trên "bản nháp" của mình, không được tự ý quăng nó vào thư mục chính.
+```text
+Hac-co-lo/
+├── .gitignore                              # Cấu hình loại trừ file rác biên dịch (.exe, .o, __pycache__)
+├── Makefile                                # Kịch bản biên dịch tự động đa nền tảng (Windows / Linux)
+├── README.md                               # Tài liệu kiến trúc hệ thống và hướng dẫn sử dụng
+│
+├── docs/
+│   └── so_do_ham_f.drawio                  # Sơ đồ khối chi tiết cấu trúc 3 tầng của hàm cập nhật F
+│
+├── src/
+│   └── dragon/
+│       ├── dragon_sbox.h / dragon_sbox.c   # Bảng hằng số S-box (sbox1, sbox2) và hàm biến đổi G_box, H_box
+│       ├── dragon_f.h / dragon_f.c         # Hàm cập nhật trạng thái F và cấu trúc lưu vết trung gian
+│       ├── dragon_init.h / dragon_init.c   # Khởi tạo Key/IV (128-bit & 256-bit) và 16 vòng trộn trạng thái
+│       ├── dragon.h / dragon.c             # Cấu trúc Dragon_Ctx, dịch thanh ghi NLFSR & sinh Keystream
+│       ├── dragon_cipher.h / dragon_cipher.c # Mã hóa và giải mã bộ đệm văn bản / tệp tin bất kỳ
+│       ├── main.c                          # Giao diện dòng lệnh (CLI) và xuất dữ liệu cho GUI
+│
+├── tests/
+│   ├── test_dragon.c                       # Kiểm thử tích hợp toàn hệ thống theo bộ Vector chuẩn
+│   └── vectors.txt                         # Bộ Test Vectors chuẩn của dự án eSTREAM cho hệ mật Dragon
+│
+├── analysis/
+│   └── crypto_eval.c                       # Đánh giá khoảng cách Hamming, Hiệu ứng thác đổ & tính ngẫu nhiên
+│
+└── gui/
+    ├── app_main.py                         # Cửa sổ giao diện chính tích hợp các tab chức năng
+    ├── tab_visualizer.py                   # Tab 1: Mô phỏng trực quan từng bước thanh ghi B[32], M và hàm F
+    └── tab_cipher_charts.py                # Tab 2: Mã hóa trực quan và biểu đồ phân tích mật mã
+```
 
-    Bạn phải tạo một cái đơn gọi là Pull Request (PR) trên trang web GitHub. PR có nghĩa là: "Các bạn ơi, tớ làm xong phần việc của tớ rồi, xin phép được gộp nó vào bài chung của cả nhóm".
+---
 
-4. Code Review
+## 3. Bảng Phân công Nhiệm vụ & Tiến độ (10 Thành viên)
 
-    Khi có 1 bạn tạo Đơn xin nộp bài (PR), phải có ít nhất 1-2 người khác trong nhóm vào đọc thử.
+| Thành viên | Tài khoản / Họ tên | Module phụ trách | Nhiệm vụ chi tiết | Tiến độ |
+| :---: | :--- | :--- | :--- | :---: |
+| **TV1** | `Phạm Văn Huấn` | `dragon_sbox.h/.c`<br>`test_G-H_func.c` | Cài đặt 2 bảng hằng số `sbox1[256]`, `sbox2[256]`, hàm phi tuyến `G_box`, `H_box` và viết bài test đơn vị cho hàm G, H. |  Đã hoàn thành |
+| **TV2** | Nguyễn Chí Tâm | `dragon_f.h/.c`<br>`so_do_ham_f.drawio` | Cài đặt 3 tầng hàm cập nhật trạng thái `F` (Pre-mixing, S-box layer, Post-mixing), lưu vết trung gian và vẽ sơ đồ khối hàm F. |  Đã hoàn thành |
+| **TV3** | `Nguyễn Tuấn Phong` | `dragon_init.h/.c` | Cài đặt thủ tục nạp khóa và IV cho cả hai chế độ 128-bit và 256-bit vào `Dragon_Ctx`, thực hiện 16 vòng khởi tạo trạng thái. |  Đã hoàn thành |
+| **TV4** | `Hà Xuân Chinh` | `dragon.h/.c` | Định nghĩa cấu trúc `Dragon_Ctx` (`B[32]`, `M_L`, `M_H`), cài đặt cơ chế dịch thanh ghi NLFSR 1024-bit và trích xuất 64-bit khóa dòng. | Đã hoàn thành |
+| **TV5** | Hoàng Anh Dũng | `dragon_cipher.h/.c`<br>`src/dragon/main.c` | Cài đặt hàm XOR mã hóa/giải mã dữ liệu độ dài bất kỳ, mã hóa file và xây dựng chương trình dòng lệnh `main.c`. | Đang hoàn thiện `main.c` |
+| **TV6** | Đoàn Ngọc Đức | `tests/test_dragon.c`<br>`tests/vectors.txt` | Kiểm thử tích hợp toàn bộ chu trình khởi tạo và sinh khóa đối chiếu với bộ Test Vectors chuẩn của eSTREAM. |  Đang ghép nối |
+| **TV7** | `Hoàng Đức An` | `analysis/crypto_eval.c` | Cài đặt hàm tính khoảng cách Hamming (`dem_bit_1`, `dem_bit_khac_nhau`), thực nghiệm Hiệu ứng thác đổ (Avalanche) và kiểm định Monobit. | Đang viết hàm thực nghiệm |
+| **TV8** | Nguyễn Đức Duy | `gui/tab_visualizer.py` | Xây dựng giao diện mô phỏng từng bước (Step-by-step) hiển thị 32 ô thanh ghi `B[0..31]`, bộ đếm `M` và luồng biến đổi trong hàm `F`. | Đang thực hiện |
+| **TV9** | Hạp Tiến Duy Anh | `gui/tab_cipher_charts.py`<br>`gui/app_main.py` | Xây dựng giao diện mã hóa văn bản/file trực tiếp (hiển thị phép XOR nhị phân/Hex) và vẽ biểu đồ thống kê Avalanche. |  Đang thực hiện |
+| **TV10** | Nguyễn Văn Khánh | `Makefile`, `.gitignore`,<br>`README.md` | Thiết kế cấu trúc phân rã module, chuẩn hóa giao diện `.h`, viết kịch bản build đa nền tảng, kiểm duyệt Pull Request và quản lý nhánh Git. |  Đang điều phối |
 
-    Nếu thấy sai: Comment bảo bạn ấy sửa.
+---
 
-    Nếu thấy đúng: Bấm nút "Approve" (Duyệt). Chỉ khi nào có đủ người Duyệt thì bài đó mới được chính thức gộp vào thư mục chính.
+## 4. Hướng dẫn Biên dịch và Chạy chương trình
 
-PHẦN 2: CÁCH ĐÓNG GÓP BÀI TẬP LỚN
+### Yêu cầu môi trường
+* Trình biên dịch C: `gcc` (MinGW-w64 trên Windows hoặc GCC trên Ubuntu/Linux).
+* Công cụ build: `make` (hoặc `mingw32-make` trên Windows).
+* Python 3.x (dành cho phần chạy giao diện trực quan trong thư mục `gui/`).
 
-1. Điểm Chăm chỉ - Số lần Commit: Máy sẽ đếm số lần bạn "Lưu báo cáo/code". Mỗi người cần ít nhất 5-10 commits trong suốt dự án. (Lưu ý: Cố tình thêm 1 dấu phẩy rồi commit để gian lận số lượng sẽ bị trừ điểm).
+### Cách 1: Sử dụng `Makefile` (Khuyên dùng)
 
-2. Điểm Sản phẩm - Nộp PR : Bạn phải là tác giả của ít nhất 1-2 "Đơn xin nộp bài" được gộp thành công vào thư mục chung. Nghĩa là bạn thực sự tạo ra giá trị (code thuật toán, tạo file test .txt, viết báo cáo file word/latex).
+Mở Terminal (Git Bash / PowerShell / Ubuntu Terminal) tại thư mục gốc của dự án:
 
-3. Đi Review dạo: Ai cũng phải vào đọc bài của người khác. Đọc, góp ý và bấm "Approve" (Duyệt) cho bài của thành viên khác ít nhất 2 lần.
+```bash
+# 1. Biên dịch toàn bộ các chương trình thực thi
+make all
 
-4. Lưu ý cho các bạn không code thuật toán : Đừng lo nếu bạn không giỏi C/C++. Những bạn nhận nhiệm vụ viết Báo cáo, vẽ sơ đồ, hoặc tạo file Test input/output... chỉ cần soạn thảo file đó, đẩy lên GitHub (Commit và PR) y hệt như người viết code.
+# 2. Chạy kiểm thử riêng hàm phi tuyến G, H và bảng S-box (của TV1)
+make test-gh
 
+# 3. Chạy bộ kiểm thử chuẩn eSTREAM Test Vectors (của TV6)
+make test
+
+# 4. Chạy chương trình phân tích mật mã & đánh giá hiệu ứng thác đổ (của TV7)
+make analysis
+
+# 5. Khởi chạy giao diện mô phỏng trực quan (của TV8 & TV9)
+make gui
+
+# 6. Xóa các file thực thi (.exe) và file tạm sau khi chạy xong
+make clean
+```
+
+### Cách 2: Biên dịch thủ công bằng lệnh `gcc` (Nếu máy không cài `make`)
+
+```bash
+# Biên dịch và chạy kiểm thử hàm G, H:
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/test_function/test_G-H_func.c -o test_gh_func
+./test_gh_func
+
+# Biên dịch chương trình chính (CLI):
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/dragon_f.c src/dragon/dragon_init.c src/dragon/dragon.c src/dragon/dragon_cipher.c src/dragon/main.c -o dragon_cli
+
+# Biên dịch bộ kiểm thử eSTREAM Vectors:
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/dragon_f.c src/dragon/dragon_init.c src/dragon/dragon.c src/dragon/dragon_cipher.c tests/test_dragon.c -o test_dragon
+
+# Biên dịch chương trình phân tích mật mã:
+gcc -Wall -Wextra -O2 -std=c99 -Isrc/dragon src/dragon/dragon_sbox.c src/dragon/dragon_f.c src/dragon/dragon_init.c src/dragon/dragon.c src/dragon/dragon_cipher.c analysis/crypto_eval.c -o crypto_eval -lm
+```
+
+---
+
+## 5. Quy tắc Làm việc Nhóm trên GitHub
+
+1. **Cập nhật nhánh `main` trước khi code:**
+   ```bash
+   git pull origin main
+   ```
+2. **Chỉ chỉnh sửa trên nhánh (branch) và tệp được phân công:** Không tự ý thay đổi nguyên mẫu hàm trong các tệp `.h` dùng chung nếu chưa thống nhất với nhóm trưởng (TV10) để tránh lỗi liên kết (`undefined reference`).
+3. **Không đẩy file thực thi lên kho lưu trữ:** Tuyệt đối không commit các file `.exe`, `.o`, `.out` lên GitHub. Chạy `make clean` trước khi thực hiện `git add` và `git commit`.
