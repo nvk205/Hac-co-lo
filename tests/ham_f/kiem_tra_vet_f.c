@@ -25,17 +25,21 @@ static const uint32_t mau_tran[4][6] = {
 
 static int kiem_tra(const char *ten, const uint32_t mau[4][6])
 {
-    uint32_t x[6], y[6];
+        uint32_t x[6], y[6];
+    Dragon_F_Trace vet = {0};
 
-
-    /* Hai hàm đều sửa trực tiếp sáu biến nên mỗi hàm cần một bản sao đầu vào. */
+    /* Mỗi hàm nhận một bản sao của cùng sáu giá trị đầu vào. */
     memcpy(x, mau[0], sizeof x);
     memcpy(y, mau[0], sizeof y);
 
-
+    /* Chạy hàm có lưu vết trên x và hàm thông thường trên y. */
+    dragon_F_trace(&x[0], &x[1], &x[2], &x[3], &x[4], &x[5], &vet);
     dragon_F(&y[0], &y[1], &y[2], &y[3], &y[4], &y[5]);
 
-    const uint32_t *cac_tang[] = {x, x, x, y};
+    /* Bốn hàng tương ứng với bốn thời điểm trong bộ mẫu. */
+    const uint32_t *cac_tang[] = {
+        vet.in, vet.pre_mix, vet.sbox_layer, vet.out
+    };
     const char *ten_tang[] = {"đầu vào", "trộn đầu", "phi tuyến", "trộn cuối"};
 
     for (int tang = 0; tang < 4; tang++) {
