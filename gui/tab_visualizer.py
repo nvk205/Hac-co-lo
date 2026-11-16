@@ -731,7 +731,7 @@ def create_visualizer_tab(parent):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.title("Dragon Stream Cipher — White-box Step-by-Step Visualizer")
+    root.title("Dragon Stream Cipher")
     root.geometry("1280x820")
     tab = VisualizerTab(root)
     tab.pack(fill=tk.BOTH, expand=True)
