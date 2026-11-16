@@ -1,0 +1,4 @@
+HELLO
+xin chào
+Dragon-128 Stream Cipher Test
+1234567890
