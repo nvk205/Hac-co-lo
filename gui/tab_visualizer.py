@@ -168,3 +168,131 @@ def call_dragon_F_trace(a, b, c, d, e, f):
             pass
 
     return dragon_F_trace_internal(a, b, c, d, e, f)
+
+
+
+# 4. BỘ MÔ PHỎNG TRẠNG THÁI
+
+class DragonStateSimulator:
+    # 6 ô thanh ghi được lấy dữ liệu đưa vào hàm F ở mỗi nhịp
+    TAP_INDICES = (0, 9, 16, 19, 30, 31)
+
+    def __init__(self):
+        self.B = [0] * 32
+        self.M = 0
+        self.init_round = 0
+        self.tick_count = 0
+        self.phase = "CHƯA KHỞI TẠO"
+        self.last_trace = None
+        self.last_keystream = None
+        self.updated_indices = set()
+
+    def load_key_iv(self, key_hex: str, iv_hex: str):
+        key_clean = re.sub(r"[^0-9A-Fa-f]", "", key_hex)
+        iv_clean = re.sub(r"[^0-9A-Fa-f]", "", iv_hex)
+        if not key_clean or not iv_clean:
+            raise ValueError("Key và IV phải chứa các ký tự Hex hợp lệ!")
+
+        key_clean = key_clean.ljust(32, "0")[:32]
+        iv_clean = iv_clean.ljust(32, "0")[:32]
+
+        k_w = [int(key_clean[i : i + 8], 16) for i in range(0, 32, 8)]
+        iv_w = [int(iv_clean[i : i + 8], 16) for i in range(0, 32, 8)]
+
+        # Khởi tạo 32 từ trạng thái B[0]..B[31] theo đặc tả Dragon-128
+        block = [
+            k_w[0], k_w[1], k_w[2], k_w[3],
+            k_w[0] ^ iv_w[0], k_w[1] ^ iv_w[1], k_w[2] ^ iv_w[2], k_w[3] ^ iv_w[3],
+            iv_w[0], iv_w[1], iv_w[2], iv_w[3],
+            k_w[0] ^ MASK32, k_w[1] ^ MASK32, k_w[2] ^ MASK32, k_w[3] ^ MASK32,
+        ]
+        self.B = (block * 2)[:32]
+        self.M = ((iv_w[0] << 32) | iv_w[1]) & MASK64
+        self.init_round = 0
+        self.tick_count = 0
+        self.phase = "ĐÃ KHỞI TẠO KEY/IV (Sẵn sàng chạy Vòng Init 1..16)"
+        self.last_keystream = None
+        self.updated_indices = set(range(32))
+
+        self._preview_current_trace()
+
+    def _preview_current_trace(self):
+        b0, b9, b16, b19, b30, b31 = [self.B[idx] for idx in self.TAP_INDICES]
+        m_hi = (self.M >> 32) & MASK32
+        m_lo = self.M & MASK32
+        a = b0
+        b = b9
+        c = b16
+        d = b19
+        e = (b30 ^ m_hi) & MASK32
+        f = (b31 ^ m_lo) & MASK32
+        self.last_trace = call_dragon_F_trace(a, b, c, d, e, f)
+
+    def step_init_round(self):
+        """Chạy 1 vòng khởi tạo trạng thái (Vòng 1..16)."""
+        if self.init_round >= 16:
+            return False
+
+        a = (self.B[0] ^ self.B[24]) & MASK32
+        b = (self.B[9] ^ self.B[25]) & MASK32
+        c = (self.B[16] ^ self.B[26]) & MASK32
+        d = (self.B[19] ^ self.B[27]) & MASK32
+        e = (self.B[30] ^ ((self.M >> 32) & MASK32)) & MASK32
+        f = (self.B[31] ^ (self.M & MASK32)) & MASK32
+
+        trace = call_dragon_F_trace(a, b, c, d, e, f)
+        a_out, b_out, c_out, d_out, e_out, f_out = trace["output"]
+        self.last_trace = trace
+
+        old_B = list(self.B)
+        for i in range(31, 1, -1):
+            self.B[i] = old_B[i - 2]
+
+        self.B[0] = (a_out ^ old_B[30]) & MASK32
+        self.B[1] = (b_out ^ old_B[31]) & MASK32
+        self.B[10] = (self.B[10] ^ c_out) & MASK32
+        self.B[11] = (self.B[11] ^ d_out) & MASK32
+
+        self.M = (self.M ^ ((e_out << 32) | f_out)) & MASK64
+        self.init_round += 1
+        self.updated_indices = {0, 1, 10, 11}
+
+        if self.init_round < 16:
+            self.phase = f"GIAI ĐOẠN INIT: Đã chạy vòng {self.init_round}/16"
+        else:
+            self.phase = "HOÀN TẤT 16 VÒNG INIT (Sẵn sàng sinh Keystream)"
+        return True
+
+    def step_keystream_tick(self):
+        """Sinh 1 nhịp Keystream (Next Tick)."""
+        b0, b9, b16, b19, b30, b31 = [self.B[idx] for idx in self.TAP_INDICES]
+        m_hi = (self.M >> 32) & MASK32
+        m_lo = self.M & MASK32
+
+        a = b0
+        b = b9
+        c = b16
+        d = b19
+        e = (b30 ^ m_hi) & MASK32
+        f = (b31 ^ m_lo) & MASK32
+
+        trace = call_dragon_F_trace(a, b, c, d, e, f)
+        a_out, b_out, c_out, d_out, e_out, f_out = trace["output"]
+        self.last_trace = trace
+
+        old_B = list(self.B)
+        for i in range(31, 1, -1):
+            self.B[i] = old_B[i - 2]
+
+        self.B[0] = b_out
+        self.B[1] = c_out
+        self.B[10] = (self.B[10] ^ d_out) & MASK32
+        self.B[11] = (self.B[11] ^ e_out) & MASK32
+
+        self.M = (self.M + 1) & MASK64
+        self.last_keystream = (a_out, f_out)
+        self.tick_count += 1
+        self.updated_indices = {0, 1, 10, 11}
+        self.phase = f"SINH KEYSTREAM: Nhịp (Tick) #{self.tick_count}"
+
+
