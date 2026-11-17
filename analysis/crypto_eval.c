@@ -1,11 +1,13 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
-#include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+#include "crypto_eval.h"
 
-#include "src/dragon/dragon.h"
+#include "dragon.h"
+#include "dragon_init.h"
+#include "dragon_f.h"
+#include "dragon_cipher.h"
 
 #define STREAM_SIZE (1024 * 1024)   // 1 MB keystream
 
