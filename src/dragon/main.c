@@ -102,7 +102,7 @@ static void mo_phong_1_nhip_sinh_khoa(Dragon_Ctx *ctx,
     dragon_F_trace(&a, &b, &c, &d, &e, &f, f_trace);
 
     /* Bước 4: Dịch thanh ghi NLFSR 1024-bit và phản hồi trạng thái mới */
-    dragon_shift_nlfsr(ctx, a, d);
+    dragon_shift_nlfsr(ctx, b, c);
 
     /* Bước 5: Xuất 2 từ 32-bit (64-bit) khóa dòng */
     *z0 = a;
