@@ -13,3 +13,4 @@ int dragon_xcrypt_file(const char *in_filepath, const char *out_filepath,
                        const uint8_t *key, const uint8_t *iv, uint32_t key_bits);
 
 #endif
+

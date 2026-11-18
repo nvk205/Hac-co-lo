@@ -1,4 +1,5 @@
 #include "dragon_init.h"
+#include "dragon_f.h"
 
 
 //n để chọn mode: n=1 là 128 bit, n=0 là 256 bit
